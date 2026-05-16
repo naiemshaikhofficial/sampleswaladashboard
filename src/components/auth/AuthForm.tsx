@@ -1,6 +1,6 @@
 'use client'
 import React, { useState } from 'react'
-import { Shield, Loader2, ArrowRight, Mail, Lock, Chrome, User, Eye, EyeOff } from 'lucide-react'
+import { Shield, Loader2, ArrowRight, Mail, Lock, Globe, User, Eye, EyeOff } from 'lucide-react'
 import { Turnstile } from '@marsidev/react-turnstile'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -56,8 +56,8 @@ export function AuthForm({ allowSignup = true, next: defaultNext }: { allowSignu
     if (result?.error) {
       setError(result.error)
       setLoading(false)
-    } else if (result?.success) {
-      setMessage(result.success)
+    } else if (result && 'success' in result) {
+      setMessage((result as any).success)
       setLoading(false)
     }
   }
@@ -83,7 +83,7 @@ export function AuthForm({ allowSignup = true, next: defaultNext }: { allowSignu
               disabled={loading}
               className="w-full h-11 bg-white text-black font-semibold rounded-xl text-sm flex items-center justify-center gap-3 hover:bg-studio-yellow transition-all group"
             >
-              <Chrome size={18} />
+              <Globe size={18} />
               Continue with Google
             </button>
           </div>
