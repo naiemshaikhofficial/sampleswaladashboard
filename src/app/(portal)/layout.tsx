@@ -59,10 +59,10 @@ export default async function DashboardLayout({
   }
 
   const sidebarLinks = [
-    { name: 'Overview', href: '/dashboard', icon: LayoutDashboard }, 
-    { name: 'My Collaborations', href: '/dashboard/my-packs', icon: Music },
-    { name: 'Revenue & Payouts', href: '/dashboard/revenue', icon: TrendingUp },
-    { name: 'Payout Settings', href: '/dashboard/settings', icon: Settings },
+    { name: 'Overview', href: '/', icon: LayoutDashboard }, 
+    { name: 'My Collaborations', href: '/my-packs', icon: Music },
+    { name: 'Revenue & Payouts', href: '/revenue', icon: TrendingUp },
+    { name: 'Payout Settings', href: '/settings', icon: Settings },
   ];
 
   return (
