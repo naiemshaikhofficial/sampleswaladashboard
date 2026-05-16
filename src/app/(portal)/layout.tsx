@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   LayoutDashboard, 
   Music, 
@@ -46,10 +47,10 @@ export default async function DashboardLayout({
               <div className="space-y-4">
                 <LogoutButton />
                 <Link 
-                  href={process.env.NODE_ENV === 'production' ? 'https://sampleswala.com' : 'http://localhost:3000'} 
+                  href="https://sampleswala.com" 
                   className="block text-[10px] text-studio-neon font-black uppercase hover:underline tracking-widest pt-4"
                 >
-                  Back to main site
+                  Back to Sampleswala.com
                 </Link>
               </div>
             </div>
@@ -72,39 +73,56 @@ export default async function DashboardLayout({
         <div className="splatter-effect bg-studio-neon bottom-[-10%] right-[-10%] opacity-20" />
 
       {/* Sidebar */}
-      <aside className="w-64 border-r-4 border-black bg-studio-charcoal flex flex-col relative z-20 shadow-[4px_0_0_rgba(0,0,0,1)]">
+      <aside className="w-64 h-screen sticky top-0 border-r-4 border-black bg-studio-charcoal flex flex-col relative z-20 shadow-[4px_0_0_rgba(0,0,0,1)]">
         <div className="p-8 border-b-4 border-black">
           <Link href="/" className="block">
-            <h1 className="text-2xl font-black italic uppercase leading-tight tracking-tighter">
-              SAMPLES<br />
-              <span className="text-studio-neon">WALA</span>
-              <span className="block text-[8px] mt-1 text-white/40 tracking-[0.3em] font-black">ARTIST PORTAL</span>
-            </h1>
+            <div className="flex flex-col gap-2">
+              <Image 
+                src="/Logo.png" 
+                alt="SamplesWala Logo" 
+                width={140} 
+                height={30} 
+                className="h-auto w-auto brightness-0 invert"
+              />
+              <span className="block text-[8px] text-white/40 tracking-[0.3em] font-black uppercase">ARTIST PORTAL</span>
+            </div>
           </Link>
         </div>
 
-        <nav className="flex-grow p-4 space-y-4 overflow-y-auto">
+        <nav className="flex-grow p-4 space-y-2 overflow-y-auto">
           {sidebarLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="flex items-center gap-4 p-4 border-2 border-black bg-black text-white hover:bg-studio-pink hover:text-black transition-all shadow-[4px_4px_0px_rgba(0,0,0,1)] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none italic font-black uppercase text-xs"
+              className={`flex items-center gap-3 p-3 font-black uppercase text-[10px] tracking-widest transition-all border-2 border-transparent ${
+                typeof window !== 'undefined' && window.location.pathname === link.href 
+                  ? 'bg-studio-neon text-black border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]' 
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
+              }`}
             >
-              <link.icon size={18} />
-              <span>{link.name}</span>
+              <link.icon size={16} />
+              {link.name}
             </Link>
           ))}
         </nav>
 
-        <div className="p-4 border-t-2 border-black">
+        <div className="p-4 border-t-2 border-black bg-black/20">
           {user && (
-            <>
-              <div className="p-4 bg-white/5 border border-white/10 mb-4">
-                <p className="text-[8px] text-white/40 uppercase font-black tracking-widest mb-1">Logged in as</p>
-                <p className="text-[10px] font-black truncate">{user.email}</p>
+            <div className="flex flex-col gap-2">
+              <div className="p-2 bg-white/5 border border-white/10 mb-1">
+                <p className="text-[7px] text-white/40 uppercase font-black tracking-widest mb-1">Artist Account</p>
+                <p className="text-[9px] font-black truncate text-studio-neon">{user.email}</p>
               </div>
+              
               <LogoutButton />
-            </>
+              
+              <Link 
+                href="https://sampleswala.com"
+                className="flex items-center justify-center gap-2 p-2 border-2 border-black bg-studio-neon text-black hover:bg-white transition-all shadow-[2px_2px_0px_rgba(0,0,0,1)] text-[9px] font-black uppercase italic"
+              >
+                Back to main site
+              </Link>
+            </div>
           )}
         </div>
       </aside>

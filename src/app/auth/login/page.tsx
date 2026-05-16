@@ -47,10 +47,10 @@ export default async function ArtistLoginPage() {
                             <span className="text-white/80">careers@sampleswala.com</span>
                         </p>
                         <Link
-                            href="http://localhost:3000"
+                            href="https://sampleswala.com"
                             className="text-[10px] text-studio-neon font-black uppercase text-center hover:underline tracking-widest"
                         >
-                            Back to main site
+                            Back to SamplesWala.com
                         </Link>
                     </div>
                 </div>

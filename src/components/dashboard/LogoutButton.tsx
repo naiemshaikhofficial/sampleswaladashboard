@@ -18,10 +18,10 @@ export function LogoutButton() {
     return (
         <button 
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full p-4 font-black uppercase text-xs border-2 border-transparent hover:bg-studio-red hover:text-white transition-all group"
+            className="flex items-center justify-center gap-2 w-full p-3 border-2 border-black bg-studio-red text-white hover:bg-white hover:text-black transition-all shadow-[4px_4px_0px_rgba(0,0,0,1)] text-[10px] font-black uppercase italic group"
         >
-            <LogOut size={18} />
-            Logout
+            <LogOut size={16} className="group-hover:rotate-12 transition-transform" />
+            Sign Out
         </button>
     );
 }
