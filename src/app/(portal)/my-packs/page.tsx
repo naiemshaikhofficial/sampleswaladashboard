@@ -61,7 +61,7 @@ export default async function MyPacksPage() {
                                         </div>
                                         <div className="p-3 bg-black/40 border border-white/5">
                                             <p className="text-[8px] text-white/40 uppercase font-black tracking-widest mb-1">Total Sales</p>
-                                            <p className="text-xs font-black">0</p>
+                                            <p className="text-xs font-black">{statsData?.packSalesCount?.[pack.id] || 0}</p>
                                         </div>
                                         <div className="p-3 bg-black/40 border border-white/5">
                                             <p className="text-[8px] text-white/40 uppercase font-black tracking-widest mb-1">Status</p>

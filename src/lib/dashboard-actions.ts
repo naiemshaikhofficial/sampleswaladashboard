@@ -60,9 +60,17 @@ export async function getArtistStats() {
             // 3. Calculate Revenue Split & Calendar Wise Data
             let totalArtistRevenue = 0;
             const monthlyRevenueMap: Record<string, number> = {};
+            const packSalesCount: Record<string, number> = {};
             
             sales?.forEach(sale => {
                 const collab = collabs.find(c => c.product_id === sale.item_id);
+                
+                // Track sales count per pack
+                if (!packSalesCount[sale.item_id]) {
+                    packSalesCount[sale.item_id] = 0;
+                }
+                packSalesCount[sale.item_id]++;
+
                 if (collab) {
                     const share = (Number(sale.amount) * Number(collab.share_percent)) / 100;
                     totalArtistRevenue += share;
@@ -92,7 +100,8 @@ export async function getArtistStats() {
                 activePacks: productIds.length,
                 totalSales: sales?.length || 0,
                 collabs: collabs,
-                monthlyData
+                monthlyData,
+                packSalesCount
             };
         },
         ['artist-stats'],
