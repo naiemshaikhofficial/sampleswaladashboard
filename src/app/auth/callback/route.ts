@@ -40,6 +40,20 @@ export async function GET(request: Request) {
     
     if (!error) {
       const response = NextResponse.redirect(`${origin}${next}`)
+      
+      // Force apply cookies to the redirect response
+      const allCookies = cookieStore.getAll()
+      allCookies.forEach(cookie => {
+        response.cookies.set({
+          name: cookie.name,
+          value: cookie.value,
+          path: '/',
+          maxAge: 31536000,
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        })
+      })
+      
       return response
     }
   }
