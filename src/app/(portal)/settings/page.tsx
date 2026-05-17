@@ -9,6 +9,7 @@ import {
   Save,
   AlertCircle
 } from 'lucide-react';
+import { uploadKycToDrive } from '@/lib/drive-actions';
 
 export default function PayoutSettings() {
   const [isSaving, setIsSaving] = useState(false);
@@ -27,7 +28,7 @@ export default function PayoutSettings() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Form Section */}
-        <div className="md:col-span-2 space-y-6">
+        <div className="md:col-span-2 space-y-8">
             <div className="comic-panel p-8 pink-border bg-studio-grey">
                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/10">
                     <Building2 className="text-studio-pink" />
@@ -105,6 +106,64 @@ export default function PayoutSettings() {
                                 Save Payout Details
                             </>
                         )}
+                    </button>
+                </form>
+            </div>
+
+            {/* KYC Upload Section */}
+            <div className="comic-panel p-8 blue-border bg-studio-grey">
+                <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/10">
+                    <ShieldCheck className="text-studio-blue" />
+                    <h3 className="text-xl font-black uppercase italic">KYC Document Upload</h3>
+                </div>
+                <form 
+                    onSubmit={async (e) => {
+                        e.preventDefault();
+                        const formData = new FormData(e.currentTarget);
+                        try {
+                            setIsSaving(true);
+                            await uploadKycToDrive(formData);
+                            alert("Document successfully uploaded to Secure Storage!");
+                        } catch (err: any) {
+                            alert("Upload failed: " + err.message);
+                        } finally {
+                            setIsSaving(false);
+                        }
+                    }} 
+                    className="space-y-6"
+                >
+                    <div className="space-y-4">
+                        <p className="text-[10px] uppercase font-black text-white/60 tracking-widest leading-relaxed">
+                            Upload a clear photo or PDF of your Aadhaar Card or PAN Card. Files are directly stored in a secure encrypted Google Drive folder.
+                        </p>
+                        
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Document Type</label>
+                            <select name="docType" className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-blue outline-none transition-colors appearance-none">
+                                <option value="aadhaar">Aadhaar Card</option>
+                                <option value="pan">PAN Card</option>
+                                <option value="passport">Passport</option>
+                            </select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Select File</label>
+                            <input 
+                                type="file" 
+                                name="file"
+                                accept="image/*,.pdf"
+                                required
+                                className="w-full bg-black border-2 border-dashed border-white/20 p-8 text-xs font-black text-white/60 cursor-pointer focus:border-studio-blue outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-studio-blue file:text-black hover:file:bg-white"
+                            />
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        disabled={isSaving}
+                        className="studio-button w-full md:w-auto !bg-studio-blue"
+                    >
+                        {isSaving ? 'Uploading...' : 'Upload Document'}
                     </button>
                 </form>
             </div>

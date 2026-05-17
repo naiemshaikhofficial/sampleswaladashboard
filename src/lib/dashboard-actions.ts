@@ -17,7 +17,7 @@ const getCachedUserData = unstable_cache(
             .eq('artist_id', userId);
 
         if (collabError || !collabs || collabs.length === 0) {
-            return { collabs: [], sales: [] };
+            return { collabs: [], sales: [], packs: [] };
         }
 
         const productIds = collabs.map(c => c.product_id);
@@ -28,15 +28,22 @@ const getCachedUserData = unstable_cache(
             .select('item_id, amount, created_at')
             .in('item_id', productIds);
 
+        // 3. Fetch Pack Details
+        const { data: packs } = await admin
+            .from('sample_packs')
+            .select('id, name, cover_url, price_inr')
+            .in('id', productIds);
+
         return {
             collabs,
-            sales: salesError ? [] : (sales || [])
+            sales: salesError ? [] : (sales || []),
+            packs: packs || []
         };
     },
     ['artist-raw-data'],
     { 
         revalidate: 86400, // 24 hours 
-        tags: ['artist-stats'] // Removed user.id from tags to avoid dynamic tag issues if any, but let's keep it simple. Actually, unstable_cache handles args automatically.
+        tags: ['artist-stats']
     }
 );
 
@@ -45,7 +52,7 @@ export async function getArtistStats(startDate?: string, endDate?: string) {
     if (!user) return null;
 
     // Fetch the raw data (cached for 24 hours)
-    const { collabs, sales } = await getCachedUserData(user.id);
+    const { collabs, sales, packs } = await getCachedUserData(user.id);
 
     if (collabs.length === 0) {
         return {
@@ -54,7 +61,9 @@ export async function getArtistStats(startDate?: string, endDate?: string) {
             totalSales: 0,
             collabs: [],
             monthlyData: [],
-            packSalesCount: {}
+            packSalesCount: {},
+            packPerformance: [],
+            topPack: null
         };
     }
 
@@ -113,6 +122,26 @@ export async function getArtistStats(startDate?: string, endDate?: string) {
         }
     });
 
+    // Calculate Pack Performance
+    const packPerformance = packs.map(pack => {
+        const collab = collabs.find(c => c.product_id === pack.id);
+        const salesCount = packSalesCount[pack.id] || 0;
+        
+        const revenue = filteredSales
+            .filter(s => s.item_id === pack.id)
+            .reduce((sum, s) => sum + ((Number(s.amount) * Number(collab?.share_percent || 0)) / 100), 0);
+            
+        return {
+            id: pack.id,
+            name: pack.name,
+            cover_url: pack.cover_url,
+            sales: salesCount,
+            revenue: Math.round(revenue)
+        };
+    }).sort((a, b) => b.revenue - a.revenue);
+
+    const topPack = packPerformance.length > 0 && packPerformance[0].sales > 0 ? packPerformance[0] : null;
+
     // Convert map to array for chart
     const monthlyData = Object.keys(revenueMap).map(label => ({
         month: label,
@@ -127,7 +156,9 @@ export async function getArtistStats(startDate?: string, endDate?: string) {
         totalSales: filteredSales.length,
         collabs: collabs,
         monthlyData,
-        packSalesCount
+        packSalesCount,
+        packPerformance,
+        topPack
     };
 }
 
