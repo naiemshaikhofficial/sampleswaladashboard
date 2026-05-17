@@ -87,17 +87,7 @@ export default async function DashboardLayout({
       <Sidebar user={user} />
 
       {/* Main Content */}
-      <main className="flex-1 h-screen flex flex-col relative z-10 overflow-y-auto">
-        {/* Mobile Header */}
-        <header className="md:hidden p-4 border-b-4 border-black bg-studio-charcoal flex items-center justify-between sticky top-0 z-50">
-            <h1 className="text-lg font-black italic uppercase tracking-tighter">
-                SAMPLES <span className="text-studio-blue">WALA</span>
-            </h1>
-            <button className="p-2 border-2 border-black bg-white text-black">
-                <LayoutDashboard size={20} />
-            </button>
-        </header>
-
+      <main className="flex-1 h-screen flex flex-col relative z-10 overflow-y-auto pt-[72px] md:pt-0">
         {/* Page Content */}
         <div className="p-6 md:p-12">
             {children}

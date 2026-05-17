@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -8,7 +8,9 @@ import {
   LayoutDashboard, 
   Music, 
   Settings, 
-  TrendingUp
+  TrendingUp,
+  Menu,
+  X
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
 
@@ -18,6 +20,7 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
     const pathname = usePathname();
+    const [isOpen, setIsOpen] = useState(false);
 
     const sidebarLinks = [
         { name: 'Overview', href: '/', icon: LayoutDashboard }, 
@@ -27,7 +30,32 @@ export function Sidebar({ user }: SidebarProps) {
     ];
 
     return (
-        <aside className="w-64 h-screen sticky top-0 border-r-4 border-black bg-studio-charcoal flex flex-col relative z-20 shadow-[4px_0_0_rgba(0,0,0,1)]">
+        <>
+            {/* Mobile Header */}
+            <header className="md:hidden fixed top-0 w-full p-4 border-b-4 border-black bg-studio-charcoal flex items-center justify-between z-[60]">
+                <Link href="/" onClick={() => setIsOpen(false)}>
+                    <h1 className="text-lg font-black italic uppercase tracking-tighter">
+                        SAMPLES <span className="text-studio-blue">WALA</span>
+                    </h1>
+                </Link>
+                <button onClick={() => setIsOpen(!isOpen)} className="p-2 border-2 border-black bg-white text-black hover:bg-studio-yellow transition-colors">
+                    {isOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+            </header>
+
+            {/* Mobile Backdrop */}
+            {isOpen && (
+                <div 
+                    className="fixed inset-0 bg-black/80 z-[40] md:hidden backdrop-blur-sm"
+                    onClick={() => setIsOpen(false)}
+                />
+            )}
+
+            <aside className={`
+                fixed md:sticky top-0 h-screen w-64 border-r-4 border-black bg-studio-charcoal flex flex-col z-[50] shadow-[4px_0_0_rgba(0,0,0,1)]
+                transition-transform duration-300 ease-in-out md:translate-x-0
+                ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+            `}>
             <div className="p-8 border-b-4 border-black">
                 <Link href="/" className="block">
                     <div className="flex flex-col gap-2">
@@ -48,6 +76,7 @@ export function Sidebar({ user }: SidebarProps) {
                     <Link
                         key={link.href}
                         href={link.href}
+                        onClick={() => setIsOpen(false)}
                         className={`flex items-center gap-3 p-3 font-black uppercase text-[10px] tracking-widest transition-all border-2 border-transparent ${
                             pathname === link.href 
                                 ? 'bg-studio-neon text-black border-black shadow-[4px_4px_0px_rgba(0,0,0,1)]' 
@@ -80,5 +109,6 @@ export function Sidebar({ user }: SidebarProps) {
                 )}
             </div>
         </aside>
+        </>
     );
 }

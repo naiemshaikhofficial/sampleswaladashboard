@@ -10,6 +10,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { updatePayoutSettings } from '@/lib/dashboard-actions';
+import { uploadKycToDrive } from '@/lib/drive-actions';
 
 export default function PayoutSettings() {
     const [isSaving, setIsSaving] = useState(false);
