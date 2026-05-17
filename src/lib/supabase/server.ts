@@ -16,9 +16,14 @@ export const createClient = cache(async () => {
         setAll(cookiesToSet) {
           try {
             const domain = process.env.NODE_ENV === 'production' ? '.sampleswala.com' : undefined;
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, { ...options, domain })
-            )
+            cookiesToSet.forEach(({ name, value, options }) => {
+              if (domain) {
+                cookieStore.set(name, value, { ...options, domain })
+              } else {
+                const { domain: _omittedDomain, ...safeOptions } = options;
+                cookieStore.set(name, value, safeOptions)
+              }
+            })
           } catch {
             // Server Component error handling
           }

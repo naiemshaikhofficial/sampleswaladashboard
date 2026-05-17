@@ -1,15 +1,43 @@
 import { NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { cookies } from 'next/headers'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  // if "next" is in search params, use it as the redirection URL
   const next = searchParams.get('next') ?? '/'
 
   if (code) {
-    const supabase = await createClient()
+    const cookieStore = await cookies()
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll()
+          },
+          setAll(cookiesToSet) {
+            try {
+              const domain = process.env.NODE_ENV === 'production' ? '.sampleswala.com' : undefined;
+              cookiesToSet.forEach(({ name, value, options }) => {
+                if (domain) {
+                  cookieStore.set(name, value, { ...options, domain })
+                } else {
+                  const { domain: _omittedDomain, ...safeOptions } = options;
+                  cookieStore.set(name, value, safeOptions)
+                }
+              })
+            } catch (error) {
+              // Ignore
+            }
+          },
+        },
+      }
+    )
+    
     const { error } = await supabase.auth.exchangeCodeForSession(code)
+    
     if (!error) {
       const response = NextResponse.redirect(`${origin}${next}`)
       return response

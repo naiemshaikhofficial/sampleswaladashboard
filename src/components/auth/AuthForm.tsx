@@ -14,7 +14,7 @@ export function AuthForm({ allowSignup = true, next: defaultNext }: { allowSignu
   
   const [mode, setMode] = useState<AuthMode>('login')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(searchParams.get('error') || null)
   const [message, setMessage] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [password, setPassword] = useState('')

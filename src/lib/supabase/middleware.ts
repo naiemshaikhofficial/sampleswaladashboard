@@ -21,9 +21,14 @@ export async function updateSession(request: NextRequest) {
           supabaseResponse = NextResponse.next({
             request,
           })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, { ...options, domain })
-          )
+          cookiesToSet.forEach(({ name, value, options }) => {
+            if (domain) {
+              supabaseResponse.cookies.set(name, value, { ...options, domain })
+            } else {
+              const { domain: _omittedDomain, ...safeOptions } = options;
+              supabaseResponse.cookies.set(name, value, safeOptions)
+            }
+          })
         },
       },
     }

@@ -58,6 +58,8 @@ export default async function DashboardLayout({
           </div>
         );
     }
+  } else {
+    redirect('/auth/login');
   }
 
   const sidebarLinks = [

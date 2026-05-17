@@ -87,6 +87,8 @@ export async function signInWithGoogle(next: string = '/') {
       redirectTo: `${currentOrigin}/auth/callback?next=${next}`,
     },
   })
+  
+  console.log('[signInWithGoogle] OAuth URL:', data.url, 'Error:', error)
 
   if (error) return { error: error.message }
   if (data.url) redirect(data.url)
