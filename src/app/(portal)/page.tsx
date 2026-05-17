@@ -7,9 +7,15 @@ import {
   ShoppingCart
 } from 'lucide-react';
 import { getArtistStats } from '@/lib/dashboard-actions';
+import Link from 'next/link';
 
-export default async function DashboardPage() {
-  const statsData = await getArtistStats();
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: { startDate?: string; endDate?: string };
+}) {
+  const { startDate, endDate } = searchParams;
+  const statsData = await getArtistStats(startDate, endDate);
   
   const stats = [
     { name: 'Total Revenue', value: `₹${statsData?.totalRevenue || 0}`, icon: TrendingUp, color: 'text-studio-neon', borderColor: 'neon-border' },
@@ -21,14 +27,43 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-12">
       {/* Heading */}
-      <div className="relative">
-        <h2 className="section-heading">
-            Artist <span className="text-studio-neon">Center</span>
-        </h2>
-        <p className="text-white/60 font-mono text-sm max-w-xl -mt-4">
-            Track your performance, manage collaborations, and watch your revenue grow. 
-            Detailed splits applied per pack as per your agreements.
-        </p>
+      <div className="relative flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+            <h2 className="section-heading">
+                Artist <span className="text-studio-neon">Center</span>
+            </h2>
+            <p className="text-white/60 font-mono text-sm max-w-xl -mt-4">
+                Track your performance, manage collaborations, and watch your revenue grow. 
+                Detailed splits applied per pack as per your agreements.
+            </p>
+        </div>
+        
+        {/* Date Filter Form */}
+        <form method="GET" action="/" className="flex items-center bg-black border-2 border-studio-charcoal shadow-[2px_2px_0px_rgba(255,255,255,0.1)]">
+            <input 
+                type="date" 
+                name="startDate" 
+                defaultValue={startDate} 
+                required
+                className="px-2 py-2 bg-transparent text-xs text-white/80 font-mono outline-none border-none"
+            />
+            <span className="text-white/40 text-[10px] uppercase font-black px-1">To</span>
+            <input 
+                type="date" 
+                name="endDate" 
+                defaultValue={endDate} 
+                required
+                className="px-2 py-2 bg-transparent text-xs text-white/80 font-mono outline-none border-none"
+            />
+            <button type="submit" className="bg-studio-neon text-black px-4 py-2 h-full text-[10px] font-black uppercase hover:bg-white transition-colors border-l-2 border-studio-charcoal">
+                Filter
+            </button>
+            {(startDate || endDate) && (
+                <Link href="/" className="bg-black text-white/60 hover:text-studio-pink px-3 py-2 h-full text-[10px] font-black uppercase transition-colors border-l-2 border-studio-charcoal flex items-center justify-center">
+                    Clear
+                </Link>
+            )}
+        </form>
       </div>
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4">
