@@ -15,6 +15,8 @@ import { uploadKycToDrive } from '@/lib/drive-actions';
 export default function PayoutSettings() {
     const [isSaving, setIsSaving] = useState(false);
     const [isSavingDetails, setIsSavingDetails] = useState(false);
+    const [detailsMessage, setDetailsMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
     return (
         <div className="max-w-4xl space-y-12">
@@ -55,16 +57,26 @@ export default function PayoutSettings() {
 
                                 try {
                                     setIsSavingDetails(true);
+                                    setDetailsMessage(null);
                                     await updatePayoutSettings(payload);
-                                    alert("Payout details successfully saved!");
+                                    setDetailsMessage({ type: 'success', text: "Payout details successfully saved!" });
                                 } catch (err: any) {
-                                    alert("Failed to save: " + err.message);
+                                    setDetailsMessage({ type: 'error', text: "Failed to save: " + err.message });
                                 } finally {
                                     setIsSavingDetails(false);
                                 }
                             }}
                             className="space-y-6"
                         >
+                            {detailsMessage && (
+                                <div className={`p-4 border-2 border-black flex items-start gap-3 ${detailsMessage.type === 'success' ? 'bg-studio-neon/20' : 'bg-studio-red/20'}`}>
+                                    <AlertCircle className={detailsMessage.type === 'success' ? 'text-studio-neon' : 'text-studio-red'} size={20} />
+                                    <p className={`text-[10px] font-black uppercase tracking-widest ${detailsMessage.type === 'success' ? 'text-studio-neon' : 'text-studio-red'}`}>
+                                        {detailsMessage.text}
+                                    </p>
+                                </div>
+                            )}
+
                             {/* Legal Info */}
                             <div className="space-y-4 pb-6 border-b border-white/10">
                                 <h4 className="text-xs font-black uppercase text-studio-pink tracking-widest">Company / Legal Information</h4>
@@ -206,16 +218,26 @@ export default function PayoutSettings() {
                                 const formData = new FormData(e.currentTarget);
                                 try {
                                     setIsSaving(true);
+                                    setUploadMessage(null);
                                     await uploadKycToDrive(formData);
-                                    alert("Document successfully uploaded!");
+                                    setUploadMessage({ type: 'success', text: "Document successfully uploaded!" });
                                 } catch (err: any) {
-                                    alert("Upload failed: " + err.message);
+                                    setUploadMessage({ type: 'error', text: "Upload failed: " + err.message });
                                 } finally {
                                     setIsSaving(false);
                                 }
                             }}
                             className="space-y-6"
                         >
+                            {uploadMessage && (
+                                <div className={`p-4 border-2 border-black flex items-start gap-3 ${uploadMessage.type === 'success' ? 'bg-studio-blue/20' : 'bg-studio-red/20'}`}>
+                                    <AlertCircle className={uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'} size={20} />
+                                    <p className={`text-[10px] font-black uppercase tracking-widest ${uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'}`}>
+                                        {uploadMessage.text}
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="space-y-4">
                                 <p className="text-[10px] uppercase font-black text-white/60 tracking-widest leading-relaxed">
                                     Upload a clear photo or PDF of your Aadhaar Card or PAN Card.

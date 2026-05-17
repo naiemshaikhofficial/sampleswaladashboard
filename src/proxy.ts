@@ -16,7 +16,7 @@ export async function proxy(request: NextRequest) {
 
   if (!user && !isPublicRoute) {
     const res = NextResponse.redirect(new URL('/auth/login', request.url))
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
+    supabaseResponse.cookies.getAll().forEach((cookie: any) => {
       res.cookies.set(cookie.name, cookie.value, cookie)
     })
     return res
@@ -24,7 +24,7 @@ export async function proxy(request: NextRequest) {
 
   if (user && isAuthRoute && pathname === '/auth/login') {
     const res = NextResponse.redirect(new URL('/', request.url))
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
+    supabaseResponse.cookies.getAll().forEach((cookie: any) => {
       res.cookies.set(cookie.name, cookie.value, cookie)
     })
     return res
