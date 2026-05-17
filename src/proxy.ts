@@ -9,6 +9,11 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = pathname.startsWith('/auth')
   const isPublicRoute = isAuthRoute || pathname.startsWith('/_next') || pathname.match(/\.(.*)$/)
 
+  // Failsafe: If Supabase redirects to the root or login with a code parameter because of URL mismatches
+  if (request.nextUrl.searchParams.has('code') && !pathname.startsWith('/auth/callback')) {
+    return NextResponse.redirect(new URL(`/auth/callback?${request.nextUrl.searchParams.toString()}`, request.url))
+  }
+
   if (!user && !isPublicRoute) {
     const res = NextResponse.redirect(new URL('/auth/login', request.url))
     supabaseResponse.cookies.getAll().forEach((cookie) => {
