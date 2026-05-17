@@ -483,3 +483,160 @@ export async function getAgreements() {
     return agreementsList;
 }
 
+// ==================== REQUEST PAYOUT WORKFLOW ====================
+export async function requestPayout() {
+    const { data: { user } } = await getUser();
+    if (!user) return { success: false, error: 'Unauthorized. Please log in.' };
+
+    const admin = getAdminClient();
+
+    // 1. Verify Payout Settings & Bank Account Setup
+    const { data: settings } = await admin
+        .from('artist_payout_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+    if (!settings || !settings.account_number || !settings.ifsc_code || !settings.account_holder_name) {
+        return { 
+            success: false, 
+            error: 'Payout settings incomplete. Please fill in your valid bank account details in Payout Settings first.' 
+        };
+    }
+
+    if (settings.verification_status !== 'verified') {
+        return {
+            success: false,
+            error: 'KYC Verification Pending. Your account must be verified before submitting payout requests.'
+        };
+    }
+
+    // 2. Prevent Multiple Active Payout Requests (Pending or Processing)
+    const { data: activeRequests } = await admin
+        .from('artist_payouts')
+        .select('id')
+        .eq('artist_id', user.id)
+        .in('status', ['pending', 'processing']);
+
+    if (activeRequests && activeRequests.length > 0) {
+        return { 
+            success: false, 
+            error: 'Duplicate request: You already have a pending or processing payout request. Please wait until it settles.' 
+        };
+    }
+
+    // 3. Fetch exact total revenue earned by the artist
+    const { collabs, sales } = await getCachedUserData(user.id);
+    const totalArtistRevenue = sales.reduce((sum, sale) => {
+        const collab = collabs.find(c => c.product_id === sale.item_id);
+        if (!collab) return sum;
+        return sum + ((Number(sale.amount) * Number(collab.share_percent)) / 100);
+    }, 0);
+
+    // 4. Fetch all previously requested payouts (Paid, Pending, Processing) to deduct
+    const { data: previousPayouts } = await admin
+        .from('artist_payouts')
+        .select('amount')
+        .eq('artist_id', user.id)
+        .in('status', ['paid', 'pending', 'processing']);
+
+    const totalDeducted = previousPayouts
+        ? previousPayouts.reduce((sum, p) => sum + Number(p.amount), 0)
+        : 0;
+
+    const availableBalance = Math.max(0, Math.round(totalArtistRevenue - totalDeducted));
+
+    // 5. Enforce Minimum Payout Threshold (₹5,000)
+    const MINIMUM_THRESHOLD = 5000;
+    if (availableBalance < MINIMUM_THRESHOLD) {
+        return { 
+            success: false, 
+            error: `Minimum payout threshold is ₹${MINIMUM_THRESHOLD.toLocaleString('en-IN')}. Your current available balance is ₹${availableBalance.toLocaleString('en-IN')}.` 
+        };
+    }
+
+    // 6. Insert new Payout Request
+    const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    const { error: insertError } = await admin
+        .from('artist_payouts')
+        .insert({
+            artist_id: user.id,
+            amount: availableBalance,
+            status: 'pending',
+            payout_month: currentMonth,
+            notes: 'Requested online by artist via dashboard.'
+        });
+
+    if (insertError) {
+        console.error('[REQUEST_PAYOUT_INSERT_ERROR]', insertError);
+        return { success: false, error: 'Failed to record payout request. Please contact support.' };
+    }
+
+    return { 
+        success: true, 
+        amount: availableBalance,
+        message: `Payout request of ₹${availableBalance.toLocaleString('en-IN')} submitted successfully!` 
+    };
+}
+
+export async function getPayoutSummary() {
+    const { data: { user } } = await getUser();
+    if (!user) return null;
+
+    const admin = getAdminClient();
+
+    // 1. Fetch exact total revenue earned by the artist
+    const { collabs, sales } = await getCachedUserData(user.id);
+    const totalArtistRevenue = sales.reduce((sum, sale) => {
+        const collab = collabs.find(c => c.product_id === sale.item_id);
+        if (!collab) return sum;
+        return sum + ((Number(sale.amount) * Number(collab.share_percent)) / 100);
+    }, 0);
+
+    // 2. Fetch all payouts to calculate paid, pending, processing
+    const { data: payouts, error: payoutsError } = await admin
+        .from('artist_payouts')
+        .select('*')
+        .eq('artist_id', user.id)
+        .order('created_at', { ascending: false });
+
+    if (payoutsError) {
+        console.error('[GET_PAYOUTS_SUMMARY_ERROR]', payoutsError);
+    }
+
+    const payoutsList = payouts || [];
+
+    const totalPaid = payoutsList
+        .filter(p => p.status === 'paid')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+
+    const totalPending = payoutsList
+        .filter(p => p.status === 'pending' || p.status === 'processing')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+
+    const totalDeducted = payoutsList
+        .filter(p => p.status !== 'failed')
+        .reduce((sum, p) => sum + Number(p.amount), 0);
+
+    const availableBalance = Math.max(0, Math.round(totalArtistRevenue - totalDeducted));
+
+    // 3. Fetch payout settings status
+    const { data: settings } = await admin
+        .from('artist_payout_settings')
+        .select('verification_status, account_number')
+        .eq('user_id', user.id)
+        .single();
+
+    return {
+        totalRevenue: Math.round(totalArtistRevenue),
+        totalPaid: Math.round(totalPaid),
+        totalPending: Math.round(totalPending),
+        availableBalance,
+        settingsStatus: settings?.verification_status || 'not_configured',
+        hasBankDetails: !!settings?.account_number,
+        payouts: payoutsList
+    };
+}
+
+
+
