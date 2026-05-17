@@ -36,7 +36,35 @@ export default async function DashboardLayout({
     const isAuthorized = (artistRes.data && artistRes.data.length > 0) || (adminRes.data && adminRes.data.length > 0);
 
     if (!isAuthorized) {
-        redirect('https://sampleswala.com');
+        return (
+          <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-mono">
+            <div className="w-full max-w-md bg-studio-charcoal border-4 border-black p-8 shadow-[12px_12px_0px_rgba(0,0,0,1)] text-center">
+              <a href="https://sampleswala.com" className="inline-block mb-8">
+                <Image 
+                    src="/Logo.png" 
+                    alt="SamplesWala Logo" 
+                    width={180} 
+                    height={40} 
+                    className="h-auto w-auto max-w-[180px] brightness-0 invert hover:scale-105 transition-transform mx-auto"
+                />
+              </a>
+              <h2 className="text-2xl font-black italic uppercase text-studio-pink mb-4">ACCESS DENIED</h2>
+              <p className="text-[10px] text-white/60 font-bold uppercase leading-relaxed mb-8">
+                This portal is exclusively for artists who actively collaborate with us. Your account ({user.email}) does not have access.<br/><br/>
+                If you want to work with us and get access to the dashboard, please visit <a href="https://sampleswala.com/careers" className="text-studio-yellow hover:underline">sampleswala.com/careers</a> and follow the steps.
+              </p>
+              <div className="space-y-4">
+                <LogoutButton />
+                <a 
+                  href="https://sampleswala.com" 
+                  className="block text-[10px] text-studio-neon font-black uppercase hover:underline tracking-widest pt-4"
+                >
+                  Back to Sampleswala.com
+                </a>
+              </div>
+            </div>
+          </div>
+        );
     }
   } else {
     redirect('/auth/login');

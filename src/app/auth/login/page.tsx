@@ -21,21 +21,19 @@ export default async function ArtistLoginPage() {
             </div>
 
             <div className="w-full max-w-md relative z-10">
-                <div className="mb-12 text-center">
-                    <Link href="/" className="inline-block mb-6">
-                        <div className="flex flex-col items-center gap-2">
-                            <Image 
-                                src="/Logo.png" 
-                                alt="SamplesWala Logo" 
-                                width={200} 
-                                height={50} 
-                                className="h-auto w-auto max-w-[200px] brightness-0 invert hover:scale-105 transition-transform"
-                                priority
-                            />
-                            <span className="block text-[10px] mt-2 text-white/40 tracking-[0.4em] font-black uppercase">ARTIST PORTAL LOGIN</span>
-                        </div>
+                <div className="mb-12 flex flex-col items-center justify-center w-full">
+                    <Link href="/" className="flex flex-col items-center gap-2 mb-6">
+                        <Image 
+                            src="/Logo.png" 
+                            alt="SamplesWala Logo" 
+                            width={200} 
+                            height={50} 
+                            className="h-auto w-auto max-w-[200px] brightness-0 invert hover:scale-105 transition-transform mx-auto"
+                            priority
+                        />
+                        <span className="block text-[10px] mt-2 text-white/40 tracking-[0.4em] font-black uppercase text-center">ARTIST PORTAL LOGIN</span>
                     </Link>
-                    <div className="inline-block px-4 py-1 bg-studio-charcoal border-2 border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60">
+                    <div className="px-4 py-1 bg-studio-charcoal border-2 border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60 text-center">
                         Collaborators Only
                     </div>
                 </div>
