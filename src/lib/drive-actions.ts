@@ -15,6 +15,18 @@ export async function uploadKycToDrive(formData: FormData) {
         return { success: false, error: "File and document type are required." };
     }
 
+    // 1. Enforce strict file size limit (max 10MB)
+    const MAX_SIZE = 10 * 1024 * 1024; // 10MB
+    if (file.size > MAX_SIZE) {
+        return { success: false, error: "File size exceeds the 10MB security limit." };
+    }
+
+    // 2. Enforce strict allowed MIME types
+    const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'application/pdf'];
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+        return { success: false, error: "Security error: Only PDF, PNG, JPG, and WEBP formats are allowed." };
+    }
+
     const WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL;
     if (!WEBHOOK_URL) {
         console.error("Missing Google Webhook URL");

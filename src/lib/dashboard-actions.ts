@@ -168,13 +168,26 @@ export async function updatePayoutSettings(formData: any) {
 
     const admin = getAdminClient();
 
+    // Whitelist ONLY safe fields that the artist is permitted to edit.
+    // Discard any sensitive system fields like verification_status, kyc_document_id, or user_id.
+    const safeData = {
+        user_id: user.id,
+        legal_name: formData.legal_name,
+        billing_address: formData.billing_address,
+        pan_number: formData.pan_number,
+        aadhaar_number: formData.aadhaar_number,
+        gst_number: formData.gst_number,
+        account_holder_name: formData.account_holder_name,
+        account_number: formData.account_number,
+        ifsc_code: formData.ifsc_code,
+        bank_name: formData.bank_name,
+        payout_method: formData.payout_method || 'bank_transfer',
+        updated_at: new Date().toISOString()
+    };
+
     const { error } = await admin
         .from('artist_payout_settings')
-        .upsert({
-            user_id: user.id,
-            ...formData,
-            updated_at: new Date().toISOString()
-        }, { onConflict: 'user_id' });
+        .upsert(safeData, { onConflict: 'user_id' });
 
     if (error) {
         console.error('[UPDATE_PAYOUT_SETTINGS_ERROR]', error);
@@ -361,6 +374,16 @@ export async function getAgreements() {
 
     // If no agreements exist in the database, return a highly secure, beautifully formatted default fallback agreement
     if (agreementsList.length === 0 && user) {
+        // Query active collaborations to pull real configured percentages
+        const { data: collabs } = await admin
+            .from('artist_collaborations')
+            .select('share_percent')
+            .eq('artist_id', user.id);
+
+        const configuredShares = collabs && collabs.length > 0
+            ? [...new Set(collabs.map((c: any) => `${Number(c.share_percent)}%`))].join(', ')
+            : null;
+
         const artistName = user.email === 'sohanbeatz@gmail.com' || user.email?.includes('sohan') 
             ? 'Somyajeet Sethy (Sohan Beatz)' 
             : user.email?.split('@')[0].toUpperCase() || 'Artist Partner';
@@ -373,7 +396,7 @@ export async function getAgreements() {
             effective_date: new Date().toISOString().split('T')[0],
             pack_name: 'All Distributed Products',
             artist_collaborations: {
-                share_percent: '35% to 70%',
+                share_percent: configuredShares || 'Custom (40% - 70%)',
                 role: 'Music Producer / Content Creator'
             },
             terms_html: `
@@ -394,19 +417,18 @@ export async function getAgreements() {
                         <li><strong>Platform Asset Designation:</strong> Any material uploaded, finalized, or made active on the platform is treated as an official platform asset.</li>
                     </ul>
 
-                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mt-4 mb-2">2. Revenue Splits & Payout Allocation</h5>
-                    <p>All cleared product sales will strictly adhere to the following payout split structures:</p>
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mt-4 mb-2">2. Revenue Splits & Dynamic Payout Allocation</h5>
+                    <p>For all products distributed through Samples Wala, the revenue splits shall be determined dynamically per product based on the exact configuration set by the platform administrator (Naiemoddin Nijamoddin Shaikh), adhering to the mutually agreed rates:</p>
                     <div class="bg-black/60 p-4 border border-white/10 my-3 space-y-2">
-                        <p><strong>A. Joint Collaboration Products (Samples Wala + Sohan Beatz):</strong></p>
+                        <p><strong>A. Platform Operational Share:</strong></p>
                         <ul class="list-disc pl-5">
-                            <li><span class="text-studio-neon font-black">30%</span> — Samples Wala Platform/Infrastructure Fee</li>
-                            <li><span class="text-studio-neon font-black">35%</span> — Samples Wala Co-Producer Share</li>
-                            <li><span class="text-studio-neon font-black">35%</span> — ${artistName} (Sohan Beatz) Creator Share</li>
+                            <li><span class="text-studio-neon font-black">30%</span> of total gross revenue is retained by Samples Wala for payment gateway fees, server infrastructure, advertising, and marketing.</li>
                         </ul>
-                        <p class="mt-2"><strong>B. Independent Products (Produced 100% by Sohan Beatz):</strong></p>
+                        <p class="mt-2"><strong>B. Creator / Co-Producer Payout Share:</strong></p>
                         <ul class="list-disc pl-5">
-                            <li><span class="text-studio-neon font-black">30%</span> — Samples Wala Platform/Infrastructure Fee</li>
-                            <li><span class="text-studio-neon font-black">70%</span> — ${artistName} (Sohan Beatz) Creator Share</li>
+                            <li>The remaining share (typically between <span class="text-studio-neon font-black">35% to 70%</span>) is calculated and paid to the Creator as configured in the collaboration dashboard.</li>
+                            ${configuredShares ? `<li><strong>Your Currently Configured Payout Share(s):</strong> <span class="text-studio-orange font-black">${configuredShares}</span> of product sales.</li>` : ''}
+                            <li class="text-white/40 italic">Note: The administrator reserves the absolute right to set or adjust the creator share percentage (e.g. 40%, 60%, 70%) for each pack independently, as agreed upon by the user prior to distribution.</li>
                         </ul>
                     </div>
 
