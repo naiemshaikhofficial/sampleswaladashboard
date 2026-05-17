@@ -31,6 +31,14 @@ export default async function DashboardPage() {
         </p>
       </div>
 
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pt-4">
+          <h3 className="text-lg font-black italic uppercase text-white/80">Overview</h3>
+          <div className="text-[10px] bg-black border-2 border-studio-charcoal px-3 py-1.5 font-bold uppercase tracking-wider text-white/60 flex items-center gap-2 shadow-[2px_2px_0px_rgba(255,255,255,0.1)]">
+              <div className="w-2 h-2 rounded-full bg-studio-neon animate-pulse" />
+              Sales & Revenue data updates every 24 hours
+          </div>
+      </div>
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
@@ -54,15 +62,47 @@ export default async function DashboardPage() {
 
       {/* Charts / Secondary Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Sales Performance Placeholder */}
-        <div className="lg:col-span-2 comic-panel p-8 blue-border min-h-[400px] flex flex-col items-center justify-center text-center">
-            <div className="p-6 bg-white/5 border-2 border-dashed border-white/10 rounded-lg">
-                <TrendingUp size={48} className="text-studio-blue mx-auto mb-4 opacity-20" />
-                <h4 className="text-xl font-black uppercase italic mb-2">Sales Visualization</h4>
-                <p className="text-xs text-white/40 max-w-xs">
-                    Detailed sales charts will appear here as soon as your packs start generating revenue.
-                </p>
-            </div>
+        {/* Sales Performance Calendar View */}
+        <div className="lg:col-span-2 comic-panel p-8 blue-border min-h-[400px] flex flex-col">
+            <h4 className="text-xl font-black uppercase italic mb-6 flex items-center gap-2 text-studio-blue">
+                <TrendingUp size={20} /> Calendar wise Revenue
+            </h4>
+            
+            {statsData?.monthlyData && statsData.monthlyData.length > 0 ? (
+                <div className="flex-1 flex flex-col gap-4 overflow-y-auto pr-2">
+                    {statsData.monthlyData.map((data: any, idx: number) => {
+                        // find the max revenue to scale the bars (prevent divide by 0)
+                        const maxRev = Math.max(...statsData.monthlyData.map((d: any) => d.revenue), 1);
+                        const widthPercent = Math.max(10, (data.revenue / maxRev) * 100);
+                        
+                        return (
+                            <div key={idx} className="flex flex-col gap-1 w-full">
+                                <div className="flex justify-between items-center text-xs font-bold uppercase text-white/80">
+                                    <span>{data.month}</span>
+                                    <span className="text-studio-neon">₹{data.revenue.toLocaleString('en-IN')}</span>
+                                </div>
+                                <div className="w-full h-8 bg-black border border-white/10 relative overflow-hidden">
+                                    <div 
+                                        className="absolute top-0 left-0 h-full bg-studio-blue border-r-4 border-white transition-all duration-1000"
+                                        style={{ width: `${widthPercent}%` }}
+                                    >
+                                        {/* Halftone pattern overlay */}
+                                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '4px 4px' }} />
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : (
+                <div className="flex-1 p-6 bg-white/5 border-2 border-dashed border-white/10 rounded-lg flex flex-col items-center justify-center text-center">
+                    <TrendingUp size={48} className="text-studio-blue mx-auto mb-4 opacity-20" />
+                    <h4 className="text-xl font-black uppercase italic mb-2">No Sales Yet</h4>
+                    <p className="text-xs text-white/40 max-w-xs">
+                        Calendar-wise sales charts will appear here as soon as your packs start generating revenue.
+                    </p>
+                </div>
+            )}
         </div>
 
         {/* Recent Activity / Quick Actions */}

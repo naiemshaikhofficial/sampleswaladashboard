@@ -43,7 +43,7 @@ export async function getArtistStats() {
             // 2. Fetch Sales from user_vault for these products
             const { data: sales, error: salesError } = await admin
                 .from('user_vault')
-                .select('item_id, amount')
+                .select('item_id, amount, created_at')
                 .in('item_id', productIds);
 
             if (salesError) {
@@ -52,26 +52,47 @@ export async function getArtistStats() {
                     totalRevenue: 0,
                     activePacks: productIds.length,
                     totalSales: 0,
-                    collabs: collabs
+                    collabs: collabs,
+                    monthlyData: []
                 };
             }
 
-            // 3. Calculate Revenue Split
+            // 3. Calculate Revenue Split & Calendar Wise Data
             let totalArtistRevenue = 0;
+            const monthlyRevenueMap: Record<string, number> = {};
             
             sales?.forEach(sale => {
                 const collab = collabs.find(c => c.product_id === sale.item_id);
                 if (collab) {
                     const share = (Number(sale.amount) * Number(collab.share_percent)) / 100;
                     totalArtistRevenue += share;
+
+                    // Group by Month (e.g., "Jan 2026")
+                    const date = new Date(sale.created_at);
+                    const monthYear = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+                    
+                    if (!monthlyRevenueMap[monthYear]) {
+                        monthlyRevenueMap[monthYear] = 0;
+                    }
+                    monthlyRevenueMap[monthYear] += share;
                 }
+            });
+
+            // Convert map to array for chart/UI consumption
+            const monthlyData = Object.keys(monthlyRevenueMap).map(month => ({
+                month,
+                revenue: Math.round(monthlyRevenueMap[month])
+            })).sort((a, b) => {
+                // simple sort by date
+                return new Date(a.month).getTime() - new Date(b.month).getTime();
             });
 
             return {
                 totalRevenue: Math.round(totalArtistRevenue),
                 activePacks: productIds.length,
                 totalSales: sales?.length || 0,
-                collabs: collabs
+                collabs: collabs,
+                monthlyData
             };
         },
         ['artist-stats'],
