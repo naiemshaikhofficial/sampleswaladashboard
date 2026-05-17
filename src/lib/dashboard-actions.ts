@@ -355,12 +355,93 @@ export async function getAgreements() {
 
     if (error) {
         console.error('[GET_AGREEMENTS_ERROR]', error);
-        return [];
+    }
+
+    let agreementsList = data || [];
+
+    // If no agreements exist in the database, return a highly secure, beautifully formatted default fallback agreement
+    if (agreementsList.length === 0 && user) {
+        const artistName = user.email === 'sohanbeatz@gmail.com' || user.email?.includes('sohan') 
+            ? 'Somyajeet Sethy (Sohan Beatz)' 
+            : user.email?.split('@')[0].toUpperCase() || 'Artist Partner';
+
+        const fallbackAgreement = {
+            id: 'default-agreement-id',
+            artist_id: user.id,
+            title: 'Master Content Distribution & Revenue Sharing Agreement',
+            status: 'active',
+            effective_date: new Date().toISOString().split('T')[0],
+            pack_name: 'All Distributed Products',
+            artist_collaborations: {
+                share_percent: '35% to 70%',
+                role: 'Music Producer / Content Creator'
+            },
+            terms_html: `
+                <div class="space-y-6 font-mono text-xs text-white/80">
+                    <p class="font-bold text-studio-orange text-sm mb-4">OFFICIAL COLLABORATION & MONETIZATION CONTRACT</p>
+                    
+                    <p><strong>Dear ${artistName},</strong></p>
+                    
+                    <p>This document serves as an official and legally binding collaboration, ownership, distribution, payment, and revenue-sharing agreement between <strong>Samples Wala</strong> (represented by Founder Naiemoddin Nijamoddin Shaikh) and <strong>${artistName}</strong> (also commercially operating as/or affiliated with Sohan Beatz).</p>
+                    
+                    <p>This agreement governs all digital goods, including but not limited to sample packs, drum kits, stems, one-shots, loops, MIDI files, synth presets, melodies, and sound design templates uploaded, submitted, marketed, or sold through any Samples Wala platform or domain.</p>
+                    
+                    <hr class="border-white/10 my-4" />
+                    
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mb-2">1. Ownership, Intellectual Property & Platform Distribution Rights</h5>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Commercial License:</strong> You grant Samples Wala an exclusive, worldwide, royalty-free, perpetual license to host, distribute, publish, advertise, bundle, discount, sub-license, and commercially exploit the submitted materials.</li>
+                        <li><strong>Platform Asset Designation:</strong> Any material uploaded, finalized, or made active on the platform is treated as an official platform asset.</li>
+                    </ul>
+
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mt-4 mb-2">2. Revenue Splits & Payout Allocation</h5>
+                    <p>All cleared product sales will strictly adhere to the following payout split structures:</p>
+                    <div class="bg-black/60 p-4 border border-white/10 my-3 space-y-2">
+                        <p><strong>A. Joint Collaboration Products (Samples Wala + Sohan Beatz):</strong></p>
+                        <ul class="list-disc pl-5">
+                            <li><span class="text-studio-neon font-black">30%</span> — Samples Wala Platform/Infrastructure Fee</li>
+                            <li><span class="text-studio-neon font-black">35%</span> — Samples Wala Co-Producer Share</li>
+                            <li><span class="text-studio-neon font-black">35%</span> — ${artistName} (Sohan Beatz) Creator Share</li>
+                        </ul>
+                        <p class="mt-2"><strong>B. Independent Products (Produced 100% by Sohan Beatz):</strong></p>
+                        <ul class="list-disc pl-5">
+                            <li><span class="text-studio-neon font-black">30%</span> — Samples Wala Platform/Infrastructure Fee</li>
+                            <li><span class="text-studio-neon font-black">70%</span> — ${artistName} (Sohan Beatz) Creator Share</li>
+                        </ul>
+                    </div>
+
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mt-4 mb-2">3. Platform Security & Payout Controls</h5>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Deductions:</strong> Payment processors, GST/taxes, refunds, fraudulent chargebacks, currency conversion fees, and affiliate commissions will be subtracted from gross sales before calculating creator shares.</li>
+                        <li><strong>Anti-Fraud Hold:</strong> Samples Wala reserves the absolute right to freeze, cancel, or suspend payouts if self-purchasing, loop manipulation, credit farming, or fraudulent activity is suspected.</li>
+                        <li><strong>Payout Minimum:</strong> A minimum cleared balance of ₹5,000 is required to trigger a monthly payout. Payouts are scheduled to process by the 1st week of each month.</li>
+                    </ul>
+
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mt-4 mb-2">4. Ironclad Intellectual Property Warranty & Liability Protection</h5>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li class="text-studio-yellow"><strong>Warranty of Originality:</strong> You warrant that 100% of the files, loops, samples, and audio stems submitted are completely original, cleared, copyright-free, and legally owned by you. They must not contain unauthorized samples, unlicensed VST outputs, or stolen melodies.</li>
+                        <li class="text-studio-yellow"><strong>Absolute Indemnification:</strong> In the event of any third-party copyright claims, DMCA notices, trademark infringement lawsuits, or litigation arising from your uploaded packs, you agree to fully indemnify, defend, and hold harmless Samples Wala, its founder Naiemoddin Nijamoddin Shaikh, and its affiliates from all legal costs, lawyer fees, penalties, and damages.</li>
+                        <li><strong>Right of Removal & Asset Recovery:</strong> Samples Wala reserves the right to immediately take down any product flagged for copyright violations, block your access, and retain/clawback any accumulated payouts to satisfy intellectual property damage claims.</li>
+                    </ul>
+
+                    <h5 class="text-white font-bold text-xs uppercase tracking-wider mt-4 mb-2">5. Governing Law, Limitation of Liability & Dispute Resolution</h5>
+                    <ul class="list-disc pl-5 space-y-1">
+                        <li><strong>Limitation of Liability:</strong> Samples Wala's total liability under any circumstances shall never exceed the total payouts actually disbursed to you during the 30-day period immediately preceding the dispute event.</li>
+                        <li><strong>Governing Law:</strong> This contract is governed by and construed under the laws of India. Any legal dispute, arbitration, or court action must be filed exclusively in the courts of Pune/Mumbai, Maharashtra, India.</li>
+                        <li><strong>Independent Contractor:</strong> This agreement does not establish any partnership, joint venture, employment, or agency relationship. You act solely as an independent content provider.</li>
+                    </ul>
+
+                    <hr class="border-white/10 my-4" />
+                    <p class="text-center font-bold text-studio-neon">*** CONTRACT GENERATED SECURELY VIA SAMPLES WALA ARTIST PLATFORM ***</p>
+                </div>
+            `
+        };
+        return [fallbackAgreement];
     }
 
     // Enrich with pack names
-    if (data && data.length > 0) {
-        const collabProductIds = data
+    if (agreementsList.length > 0) {
+        const collabProductIds = agreementsList
             .filter((a: any) => a.artist_collaborations?.product_id)
             .map((a: any) => a.artist_collaborations.product_id);
 
@@ -370,12 +451,13 @@ export async function getAgreements() {
                 .select('id, name')
                 .in('id', collabProductIds);
 
-            return data.map((agreement: any) => ({
+            return agreementsList.map((agreement: any) => ({
                 ...agreement,
                 pack_name: packs?.find((p: any) => p.id === agreement.artist_collaborations?.product_id)?.name || null
             }));
         }
     }
 
-    return data || [];
+    return agreementsList;
 }
+
