@@ -51,6 +51,13 @@
     filter: invert(1);
     cursor: pointer;
   }
+
+  /* Disable image dragging globally */
+  img {
+    -webkit-user-drag: none;
+    user-select: none;
+    pointer-events: auto;
+  }
 }
 
 @layer components {
