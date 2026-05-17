@@ -137,7 +137,6 @@ export default async function DashboardPage({
                                         className="absolute top-0 left-0 h-full bg-studio-blue border-r-2 border-white transition-all duration-1000 group-hover:bg-studio-neon"
                                         style={{ width: `${widthPercent}%` }}
                                     >
-                                        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '4px 4px' }} />
                                     </div>
                                 </div>
                             </div>

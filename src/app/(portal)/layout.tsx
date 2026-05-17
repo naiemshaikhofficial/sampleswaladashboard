@@ -78,25 +78,11 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <div className="flex h-screen bg-halftone font-mono relative overflow-hidden">
+    <div className="flex h-screen bg-black font-mono relative overflow-hidden">
         {/* Animated Background Elements */}
         <div className="splatter-effect bg-studio-blue top-[-10%] left-[-10%] opacity-20" />
         <div className="splatter-effect bg-studio-orange bottom-[-10%] right-[-10%] opacity-20" />
         
-        {/* Floating Music Notes */}
-        <div className="absolute top-20 right-20 text-studio-yellow opacity-20 animate-float z-0 pointer-events-none">
-          <Music size={120} strokeWidth={1} />
-        </div>
-        <div className="absolute bottom-40 left-1/3 text-studio-red opacity-20 animate-float-delayed z-0 pointer-events-none" style={{ transform: 'rotate(-15deg)' }}>
-          <Music size={80} strokeWidth={1.5} />
-        </div>
-
-        {/* Comic Equalizer Overlay */}
-        <div className="absolute bottom-0 right-0 p-8 flex items-end gap-2 opacity-30 z-0 h-32 pointer-events-none">
-            {[...Array(5)].map((_, i) => (
-                <div key={i} className="w-8 bg-studio-blue eq-bar border-2 border-black" style={{ height: `${Math.random() * 100 + 20}%` }} />
-            ))}
-        </div>
 
       <Sidebar user={user} />
 

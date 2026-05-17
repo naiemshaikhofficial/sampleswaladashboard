@@ -118,27 +118,11 @@
     box-shadow: 10px 10px 0px black;
     position: relative;
     overflow: hidden;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  }
-
-  .comic-panel:hover {
-    transform: translateY(-5px) rotate(-1deg);
-  }
-
-  .comic-panel::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px);
-    background-size: 8px 8px;
-    opacity: 0.5;
-    pointer-events: none;
   }
 
   /* Comic Halftone Pattern */
   .bg-halftone {
-    background-image: radial-gradient(circle, #333 1px, transparent 1.5px);
-    background-size: 10px 10px;
+    background-image: none;
     background-color: black;
   }
 

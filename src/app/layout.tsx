@@ -20,8 +20,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SamplesWala Dashboard",
-  description: "Artist Portal for SamplesWala",
+  title: "Artist Dashboard",
+  description: "Manage your collaborations, packs, and revenue payouts on SamplesWala.",
 };
 
 export default function RootDashboardLayout({
