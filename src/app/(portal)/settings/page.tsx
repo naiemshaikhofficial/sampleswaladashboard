@@ -1,15 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Building2,
     User,
     CreditCard,
     ShieldCheck,
     Save,
-    AlertCircle
+    AlertCircle,
+    CheckCircle2,
+    Image as ImageIcon,
+    Eye,
+    EyeOff
 } from 'lucide-react';
-import { updatePayoutSettings } from '@/lib/dashboard-actions';
+import { updatePayoutSettings, getPayoutSettings } from '@/lib/dashboard-actions';
 import { uploadKycToDrive } from '@/lib/drive-actions';
 
 export default function PayoutSettings() {
@@ -17,6 +21,38 @@ export default function PayoutSettings() {
     const [isSavingDetails, setIsSavingDetails] = useState(false);
     const [detailsMessage, setDetailsMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [uploadMessage, setUploadMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [dbKycUrl, setDbKycUrl] = useState<string | null>(null);
+    const [initialData, setInitialData] = useState<any>(null);
+    const [showAccount, setShowAccount] = useState(false);
+    const [showConfirmAccount, setShowConfirmAccount] = useState(false);
+
+    useEffect(() => {
+        const CACHE_KEY = 'sw_payout_settings';
+        const cached = localStorage.getItem(CACHE_KEY);
+
+        if (cached) {
+            // Load from local cache instantly — no DB call
+            const data = JSON.parse(cached);
+            setInitialData(data);
+            if (data.kyc_document_id) {
+                setDbKycUrl(`https://drive.google.com/thumbnail?id=${data.kyc_document_id}&sz=w800`);
+            }
+        } else {
+            // First time only — fetch from DB and cache
+            const loadSettings = async () => {
+                const data = await getPayoutSettings();
+                if (data) {
+                    setInitialData(data);
+                    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+                    if (data.kyc_document_id) {
+                        setDbKycUrl(`https://drive.google.com/thumbnail?id=${data.kyc_document_id}&sz=w800`);
+                    }
+                }
+            };
+            loadSettings();
+        }
+    }, []);
 
     return (
         <div className="max-w-4xl space-y-12">
@@ -56,9 +92,24 @@ export default function PayoutSettings() {
                                 const payload = Object.fromEntries(form.entries());
 
                                 try {
+                                    const legalName = (payload.legal_name as string).trim().toLowerCase();
+                                    const accountName = (payload.account_holder_name as string).trim().toLowerCase();
+
+                                    if (legalName !== accountName) {
+                                        throw new Error("Legal Name and Account Holder Name must be the same for KYC approval.");
+                                    }
+
+                                    if (payload.account_number !== payload.confirm_account_number) {
+                                        throw new Error("Account numbers do not match!");
+                                    }
+
                                     setIsSavingDetails(true);
                                     setDetailsMessage(null);
                                     await updatePayoutSettings(payload);
+                                    // Update local cache so next visit skips DB
+                                    const updated = { ...initialData, ...payload };
+                                    setInitialData(updated);
+                                    localStorage.setItem('sw_payout_settings', JSON.stringify(updated));
                                     setDetailsMessage({ type: 'success', text: "Payout details successfully saved!" });
                                 } catch (err: any) {
                                     setDetailsMessage({ type: 'error', text: "Failed to save: " + err.message });
@@ -88,6 +139,7 @@ export default function PayoutSettings() {
                                             type="text"
                                             name="legal_name"
                                             required
+                                            defaultValue={initialData?.legal_name || ''}
                                             placeholder="YOUR FULL LEGAL NAME"
                                             className="w-full bg-black border-2 border-black p-4 pl-12 text-xs font-black focus:border-studio-pink outline-none transition-colors"
                                         />
@@ -99,6 +151,7 @@ export default function PayoutSettings() {
                                     <textarea
                                         name="billing_address"
                                         required
+                                        defaultValue={initialData?.billing_address || ''}
                                         placeholder="STREET, CITY, STATE, PINCODE"
                                         rows={2}
                                         className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors resize-none"
@@ -112,6 +165,7 @@ export default function PayoutSettings() {
                                             type="text"
                                             name="aadhaar_number"
                                             required
+                                            defaultValue={initialData?.aadhaar_number || ''}
                                             placeholder="1234 5678 9012"
                                             className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
                                         />
@@ -122,6 +176,7 @@ export default function PayoutSettings() {
                                             type="text"
                                             name="pan_number"
                                             required
+                                            defaultValue={initialData?.pan_number || ''}
                                             placeholder="ABCDE1234F"
                                             className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
                                         />
@@ -131,6 +186,7 @@ export default function PayoutSettings() {
                                         <input
                                             type="text"
                                             name="gst_number"
+                                            defaultValue={initialData?.gst_number || ''}
                                             placeholder="22AAAAA0000A1Z5"
                                             className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
                                         />
@@ -148,6 +204,7 @@ export default function PayoutSettings() {
                                             type="text"
                                             name="account_holder_name"
                                             required
+                                            defaultValue={initialData?.account_holder_name || ''}
                                             placeholder="AS PER BANK RECORDS"
                                             className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
                                         />
@@ -158,6 +215,7 @@ export default function PayoutSettings() {
                                             type="text"
                                             name="bank_name"
                                             required
+                                            defaultValue={initialData?.bank_name || ''}
                                             placeholder="E.G. HDFC BANK"
                                             className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
                                         />
@@ -170,24 +228,55 @@ export default function PayoutSettings() {
                                         <div className="relative">
                                             <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
                                             <input
-                                                type="password"
+                                                type={showAccount ? "text" : "password"}
                                                 name="account_number"
                                                 required
+                                                defaultValue={initialData?.account_number || ''}
                                                 placeholder="•••• •••• •••• ••••"
-                                                className="w-full bg-black border-2 border-black p-4 pl-12 text-xs font-black focus:border-studio-pink outline-none transition-colors tracking-widest"
+                                                className="w-full bg-black border-2 border-black p-4 pl-12 pr-12 text-xs font-black focus:border-studio-pink outline-none transition-colors tracking-widest"
                                             />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowAccount(!showAccount)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                                            >
+                                                {showAccount ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">IFSC Code</label>
-                                        <input
-                                            type="text"
-                                            name="ifsc_code"
-                                            required
-                                            placeholder="E.G. HDFC0001234"
-                                            className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
-                                        />
+                                        <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Confirm Account Number</label>
+                                        <div className="relative">
+                                            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-white/20" size={16} />
+                                            <input
+                                                type={showConfirmAccount ? "text" : "password"}
+                                                name="confirm_account_number"
+                                                required
+                                                defaultValue={initialData?.account_number || ''}
+                                                placeholder="•••• •••• •••• ••••"
+                                                className="w-full bg-black border-2 border-black p-4 pl-12 pr-12 text-xs font-black focus:border-studio-pink outline-none transition-colors tracking-widest"
+                                            />
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowConfirmAccount(!showConfirmAccount)}
+                                                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors"
+                                            >
+                                                {showConfirmAccount ? <EyeOff size={16} /> : <Eye size={16} />}
+                                            </button>
+                                        </div>
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">IFSC Code</label>
+                                    <input
+                                        type="text"
+                                        name="ifsc_code"
+                                        required
+                                        defaultValue={initialData?.ifsc_code || ''}
+                                        placeholder="E.G. HDFC0001234"
+                                        className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-pink outline-none transition-colors"
+                                    />
                                 </div>
                             </div>
 
@@ -206,72 +295,151 @@ export default function PayoutSettings() {
                         </form>
                     </div>
 
-                    {/* KYC Upload Section */}
-                    <div className="comic-panel p-8 blue-border bg-studio-grey">
-                        <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/10">
-                            <ShieldCheck className="text-studio-blue" />
-                            <h3 className="text-xl font-black uppercase italic">KYC Document Upload</h3>
+                    {/* KYC Upload Section — 2 column: form + example */}
+                    <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                        {/* Left: Upload Form */}
+                        <div className="md:col-span-3 comic-panel p-8 blue-border bg-studio-grey">
+                            <div className="flex items-center gap-3 mb-8 pb-4 border-b border-white/10">
+                                <ShieldCheck className="text-studio-blue" />
+                                <h3 className="text-xl font-black uppercase italic">KYC Document Upload</h3>
+                            </div>
+                            <form
+                                onSubmit={async (e) => {
+                                    e.preventDefault();
+                                    const formData = new FormData(e.currentTarget);
+                                    try {
+                                        setIsSaving(true);
+                                        setUploadMessage(null);
+                                        const result = await uploadKycToDrive(formData);
+                                        // Update local cache with new document ID
+                                        if (result?.fileId) {
+                                            const updated = { ...initialData, kyc_document_id: result.fileId };
+                                            setInitialData(updated);
+                                            localStorage.setItem('sw_payout_settings', JSON.stringify(updated));
+                                            setDbKycUrl(`https://drive.google.com/thumbnail?id=${result.fileId}&sz=w800`);
+                                            setPreviewUrl(null);
+                                        }
+                                        setUploadMessage({ type: 'success', text: "Document successfully uploaded!" });
+                                    } catch (err: any) {
+                                        setUploadMessage({ type: 'error', text: "Upload failed: " + err.message });
+                                    } finally {
+                                        setIsSaving(false);
+                                    }
+                                }}
+                                className="space-y-6"
+                            >
+                                {uploadMessage && (
+                                    <div className={`p-4 border-2 border-black flex items-start gap-3 ${uploadMessage.type === 'success' ? 'bg-studio-blue/20' : 'bg-studio-red/20'}`}>
+                                        <AlertCircle className={uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'} size={20} />
+                                        <p className={`text-[10px] font-black uppercase tracking-widest ${uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'}`}>
+                                            {uploadMessage.text}
+                                        </p>
+                                    </div>
+                                )}
+
+                                <div className="space-y-4">
+                                    <p className="text-[10px] uppercase font-black text-white/60 tracking-widest leading-relaxed">
+                                        Upload a clear photo or PDF of your Aadhaar Card or PAN Card.
+                                    </p>
+
+                                    {/* Photo Guidelines */}
+                                    <div className="bg-black border border-white/10 p-4 space-y-3">
+                                        <h5 className="text-[10px] font-black uppercase text-studio-blue tracking-widest">Photo Guidelines</h5>
+                                        <ul className="space-y-2">
+                                            <li className="flex items-start gap-2 text-[9px] uppercase tracking-widest text-white/70">
+                                                <CheckCircle2 size={12} className="text-studio-neon shrink-0 mt-0.5" />
+                                                <span>Make sure the room is well-lit (No dark shadows).</span>
+                                            </li>
+                                            <li className="flex items-start gap-2 text-[9px] uppercase tracking-widest text-white/70">
+                                                <CheckCircle2 size={12} className="text-studio-neon shrink-0 mt-0.5" />
+                                                <span>All 4 corners of the document must be clearly visible.</span>
+                                            </li>
+                                            <li className="flex items-start gap-2 text-[9px] uppercase tracking-widest text-white/70">
+                                                <CheckCircle2 size={12} className="text-studio-neon shrink-0 mt-0.5" />
+                                                <span>Text on the document should be sharp and readable.</span>
+                                            </li>
+                                            <li className="flex items-start gap-2 text-[9px] uppercase tracking-widest text-white/70">
+                                                <CheckCircle2 size={12} className="text-studio-neon shrink-0 mt-0.5" />
+                                                <span>Avoid glare/reflections from flash or overhead lights.</span>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Document Type</label>
+                                        <select name="docType" className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-blue outline-none transition-colors appearance-none">
+                                            <option value="aadhaar">Aadhaar Card</option>
+                                            <option value="pan">PAN Card</option>
+                                            <option value="passport">Passport</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Select File (.PDF, .JPG, .PNG only)</label>
+                                        <input
+                                            type="file"
+                                            name="file"
+                                            accept=".pdf,.jpg,.jpeg,.png"
+                                            required={!dbKycUrl}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                if (file) {
+                                                    const url = URL.createObjectURL(file);
+                                                    setPreviewUrl(url);
+                                                }
+                                            }}
+                                            className="w-full bg-black border-2 border-dashed border-white/20 p-8 text-xs font-black text-white/60 cursor-pointer focus:border-studio-blue outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-studio-blue file:text-black hover:file:bg-white"
+                                        />
+                                    </div>
+
+                                    {/* Preview Image Container */}
+                                    {(previewUrl || dbKycUrl) && (
+                                        <div className="space-y-2 mt-4">
+                                            <label className="text-[10px] font-black uppercase text-white/40 tracking-widest flex items-center gap-2">
+                                                <ImageIcon size={12} />
+                                                Document Preview
+                                            </label>
+                                            <div className="w-full max-w-sm aspect-[4/3] border-2 border-black overflow-hidden relative bg-black flex items-center justify-center">
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img 
+                                                    src={previewUrl || dbKycUrl || ''} 
+                                                    alt="KYC Document Preview" 
+                                                    className="w-full h-full object-contain"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isSaving}
+                                    className="studio-button w-full md:w-auto !bg-studio-blue"
+                                >
+                                    {isSaving ? 'Uploading...' : 'Upload Document'}
+                                </button>
+                            </form>
                         </div>
-                        <form
-                            onSubmit={async (e) => {
-                                e.preventDefault();
-                                const formData = new FormData(e.currentTarget);
-                                try {
-                                    setIsSaving(true);
-                                    setUploadMessage(null);
-                                    await uploadKycToDrive(formData);
-                                    setUploadMessage({ type: 'success', text: "Document successfully uploaded!" });
-                                } catch (err: any) {
-                                    setUploadMessage({ type: 'error', text: "Upload failed: " + err.message });
-                                } finally {
-                                    setIsSaving(false);
-                                }
-                            }}
-                            className="space-y-6"
-                        >
-                            {uploadMessage && (
-                                <div className={`p-4 border-2 border-black flex items-start gap-3 ${uploadMessage.type === 'success' ? 'bg-studio-blue/20' : 'bg-studio-red/20'}`}>
-                                    <AlertCircle className={uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'} size={20} />
-                                    <p className={`text-[10px] font-black uppercase tracking-widest ${uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'}`}>
-                                        {uploadMessage.text}
+
+                        {/* Right: Example Image */}
+                        <div className="md:col-span-2 hidden md:block">
+                            <div className="sticky top-24 space-y-6">
+                                <div className="comic-panel p-6 neon-border bg-black">
+                                    <h3 className="text-sm font-black uppercase italic text-studio-neon mb-4">Good Example</h3>
+                                    <div className="border-2 border-white/10 p-2 bg-studio-grey/50">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img 
+                                            src="/kyc-example.png" 
+                                            alt="KYC Example — well-lit, all corners visible" 
+                                            className="w-full h-auto"
+                                        />
+                                    </div>
+                                    <p className="text-[9px] text-white/50 uppercase tracking-widest font-black mt-4 leading-relaxed">
+                                        Your document photo should look like this — well-lit, flat, all 4 corners visible, no glare.
                                     </p>
                                 </div>
-                            )}
-
-                            <div className="space-y-4">
-                                <p className="text-[10px] uppercase font-black text-white/60 tracking-widest leading-relaxed">
-                                    Upload a clear photo or PDF of your Aadhaar Card or PAN Card.
-                                </p>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Document Type</label>
-                                    <select name="docType" className="w-full bg-black border-2 border-black p-4 text-xs font-black focus:border-studio-blue outline-none transition-colors appearance-none">
-                                        <option value="aadhaar">Aadhaar Card</option>
-                                        <option value="pan">PAN Card</option>
-                                        <option value="passport">Passport</option>
-                                    </select>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase text-white/40 tracking-widest">Select File (.PDF, .JPG, .PNG only)</label>
-                                    <input
-                                        type="file"
-                                        name="file"
-                                        accept=".pdf,.jpg,.jpeg,.png"
-                                        required
-                                        className="w-full bg-black border-2 border-dashed border-white/20 p-8 text-xs font-black text-white/60 cursor-pointer focus:border-studio-blue outline-none transition-colors file:mr-4 file:py-2 file:px-4 file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-studio-blue file:text-black hover:file:bg-white"
-                                    />
-                                </div>
                             </div>
-
-                            <button
-                                type="submit"
-                                disabled={isSaving}
-                                className="studio-button w-full md:w-auto !bg-studio-blue"
-                            >
-                                {isSaving ? 'Uploading...' : 'Upload Document'}
-                            </button>
-                        </form>
+                        </div>
                     </div>
                 </div>
 

@@ -183,3 +183,22 @@ export async function updatePayoutSettings(formData: any) {
 
     return { success: true };
 }
+
+export async function getPayoutSettings() {
+    const { data: { user } } = await getUser();
+    if (!user) return null;
+
+    const admin = getAdminClient();
+    const { data, error } = await admin
+        .from('artist_payout_settings')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+    if (error && error.code !== 'PGRST116') {
+        console.error('[GET_PAYOUT_SETTINGS_ERROR]', error);
+        return null;
+    }
+
+    return data;
+}

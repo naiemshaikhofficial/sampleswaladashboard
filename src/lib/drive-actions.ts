@@ -54,6 +54,15 @@ export async function uploadKycToDrive(formData: FormData) {
             throw new Error(result.error || "Unknown webhook error");
         }
 
+        // Save fileId to Supabase
+        const { getAdminClient } = await import('@/lib/supabase/admin');
+        const admin = getAdminClient();
+        await admin.from('artist_payout_settings').upsert({
+            user_id: user.id,
+            kyc_document_id: result.fileId,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
         return { success: true, fileId: result.fileId };
 
     } catch (error: any) {
