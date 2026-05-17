@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     Building2,
     User,
@@ -11,7 +11,9 @@ import {
     CheckCircle2,
     Image as ImageIcon,
     Eye,
-    EyeOff
+    EyeOff,
+    Upload,
+    Loader2
 } from 'lucide-react';
 import { updatePayoutSettings, getPayoutSettings } from '@/lib/dashboard-actions';
 import { uploadKycToDrive } from '@/lib/drive-actions';
@@ -26,6 +28,65 @@ export default function PayoutSettings() {
     const [initialData, setInitialData] = useState<any>(null);
     const [showAccount, setShowAccount] = useState(false);
     const [showConfirmAccount, setShowConfirmAccount] = useState(false);
+
+    // Upload progress state
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadStep, setUploadStep] = useState('');
+    const [isUploading, setIsUploading] = useState(false);
+    const progressIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+    const UPLOAD_STEPS = [
+        { at: 5,  label: 'Preparing file...' },
+        { at: 15, label: 'Encrypting document...' },
+        { at: 30, label: 'Uploading to secure server...' },
+        { at: 60, label: 'Processing with Google Drive...' },
+        { at: 85, label: 'Saving verification record...' },
+        { at: 100, label: 'Upload complete!' },
+    ];
+
+    // Simulate smooth progress during upload
+    const startProgressSimulation = useCallback(() => {
+        setUploadProgress(0);
+        setUploadStep(UPLOAD_STEPS[0].label);
+        setIsUploading(true);
+
+        let current = 0;
+        progressIntervalRef.current = setInterval(() => {
+            current += Math.random() * 3 + 0.5; // Increment 0.5-3.5% each tick
+            if (current > 88) current = 88; // Cap at 88% until real completion
+
+            // Find current step label
+            const step = [...UPLOAD_STEPS].reverse().find(s => current >= s.at);
+            if (step && step.at < 100) {
+                setUploadStep(step.label);
+            }
+
+            setUploadProgress(Math.round(current));
+        }, 300);
+    }, []);
+
+    const completeProgress = useCallback((success: boolean) => {
+        if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = null;
+        }
+        if (success) {
+            setUploadProgress(100);
+            setUploadStep('Upload complete!');
+            // Keep bar visible for 2s then hide
+            setTimeout(() => setIsUploading(false), 2500);
+        } else {
+            setUploadStep('Upload failed');
+            setTimeout(() => setIsUploading(false), 2000);
+        }
+    }, []);
+
+    // Cleanup interval on unmount
+    useEffect(() => {
+        return () => {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        };
+    }, []);
 
     useEffect(() => {
         const CACHE_KEY = 'sw_payout_settings';
@@ -311,11 +372,15 @@ export default function PayoutSettings() {
                                     const formData = new FormData(e.currentTarget);
                                     setIsSaving(true);
                                     setUploadMessage(null);
+                                    startProgressSimulation();
+
                                     const result = await uploadKycToDrive(formData);
 
                                     if (!result?.success) {
+                                        completeProgress(false);
                                         setUploadMessage({ type: 'error', text: "Upload failed: " + (result?.error || "Unknown error") });
                                     } else {
+                                        completeProgress(true);
                                         // Update local cache with new document ID
                                         if (result?.fileId) {
                                             const updated = { ...initialData, kyc_document_id: result.fileId };
@@ -336,6 +401,82 @@ export default function PayoutSettings() {
                                         <p className={`text-[10px] font-black uppercase tracking-widest ${uploadMessage.type === 'success' ? 'text-studio-blue' : 'text-studio-red'}`}>
                                             {uploadMessage.text}
                                         </p>
+                                    </div>
+                                )}
+
+                                {/* Upload Progress Bar */}
+                                {isUploading && (
+                                    <div className="space-y-3 p-5 bg-black border-2 border-studio-blue">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                {uploadProgress < 100 ? (
+                                                    <Loader2 size={14} className="text-studio-blue animate-spin" />
+                                                ) : (
+                                                    <CheckCircle2 size={14} className="text-studio-neon" />
+                                                )}
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-white/80">
+                                                    {uploadStep}
+                                                </span>
+                                            </div>
+                                            <span className={`text-sm font-black italic ${
+                                                uploadProgress >= 100 ? 'text-studio-neon' : 'text-studio-blue'
+                                            }`}>
+                                                {uploadProgress}%
+                                            </span>
+                                        </div>
+
+                                        {/* Track */}
+                                        <div className="w-full h-5 bg-studio-charcoal border-2 border-black relative overflow-hidden">
+                                            {/* Fill */}
+                                            <div
+                                                className={`absolute top-0 left-0 h-full transition-all duration-300 ease-out ${
+                                                    uploadProgress >= 100
+                                                        ? 'bg-studio-neon'
+                                                        : 'bg-studio-blue'
+                                                }`}
+                                                style={{ width: `${uploadProgress}%` }}
+                                            >
+                                                {/* Halftone overlay */}
+                                                <div
+                                                    className="absolute inset-0 opacity-25 pointer-events-none"
+                                                    style={{
+                                                        backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+                                                        backgroundSize: '5px 5px',
+                                                    }}
+                                                />
+                                            </div>
+
+                                            {/* Animated pulse stripe while uploading */}
+                                            {uploadProgress < 100 && (
+                                                <div
+                                                    className="absolute inset-0 opacity-10 pointer-events-none animate-pulse"
+                                                    style={{
+                                                        backgroundImage:
+                                                            'repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(255,255,255,0.3) 6px, rgba(255,255,255,0.3) 12px)',
+                                                    }}
+                                                />
+                                            )}
+                                        </div>
+
+                                        {/* Step dots */}
+                                        <div className="flex justify-between px-1">
+                                            {['Prepare', 'Encrypt', 'Upload', 'Process', 'Save'].map((label, i) => {
+                                                const thresholds = [5, 15, 30, 60, 85];
+                                                const active = uploadProgress >= thresholds[i];
+                                                return (
+                                                    <div key={label} className="flex flex-col items-center gap-1">
+                                                        <div className={`w-2 h-2 border border-black transition-colors duration-300 ${
+                                                            active ? 'bg-studio-neon' : 'bg-studio-charcoal'
+                                                        }`} />
+                                                        <span className={`text-[7px] font-black uppercase tracking-wider transition-colors duration-300 ${
+                                                            active ? 'text-white/70' : 'text-white/20'
+                                                        }`}>
+                                                            {label}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 
@@ -418,7 +559,11 @@ export default function PayoutSettings() {
                                     disabled={isSaving}
                                     className="studio-button w-full md:w-auto !bg-studio-blue"
                                 >
-                                    {isSaving ? 'Uploading...' : 'Upload Document'}
+                                    {isSaving ? (
+                                        <><Loader2 size={16} className="animate-spin" /> Uploading...</>
+                                    ) : (
+                                        <><Upload size={16} /> Upload Document</>
+                                    )}
                                 </button>
                             </form>
                         </div>
