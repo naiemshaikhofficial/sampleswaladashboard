@@ -10,7 +10,11 @@ import {
   Settings, 
   TrendingUp,
   Menu,
-  X
+  X,
+  BarChart3,
+  Receipt,
+  FileText,
+  MessageSquare
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
 
@@ -25,7 +29,11 @@ export function Sidebar({ user }: SidebarProps) {
     const sidebarLinks = [
         { name: 'Overview', href: '/', icon: LayoutDashboard }, 
         { name: 'My Collaborations', href: '/my-packs', icon: Music },
-        { name: 'Revenue & Payouts', href: '/revenue', icon: TrendingUp },
+        { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+        { name: 'Revenue Splits', href: '/revenue', icon: TrendingUp },
+        { name: 'Payout History', href: '/payout-history', icon: Receipt },
+        { name: 'Agreements', href: '/agreements', icon: FileText },
+        { name: 'Support', href: '/support', icon: MessageSquare },
         { name: 'Payout Settings', href: '/settings', icon: Settings },
     ];
 

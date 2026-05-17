@@ -25,7 +25,7 @@ const getCachedUserData = unstable_cache(
         // 2. Fetch ALL Sales
         const { data: sales, error: salesError } = await admin
             .from('user_vault')
-            .select('item_id, amount, created_at')
+            .select('user_id, item_id, amount, created_at')
             .in('item_id', productIds);
 
         // 3. Fetch Pack Details
@@ -201,4 +201,181 @@ export async function getPayoutSettings() {
     }
 
     return data;
+}
+
+// ==================== PAYOUT HISTORY ====================
+export async function getPayoutHistory() {
+    const { data: { user } } = await getUser();
+    if (!user) return [];
+
+    const admin = getAdminClient();
+    const { data, error } = await admin
+        .from('artist_payouts')
+        .select('*')
+        .eq('artist_id', user.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[GET_PAYOUT_HISTORY_ERROR]', error);
+        return [];
+    }
+    return data || [];
+}
+
+// ==================== ANALYTICS DEEP DIVE ====================
+export async function getAnalyticsData() {
+    const { data: { user } } = await getUser();
+    if (!user) return null;
+
+    const { collabs, sales, packs } = await getCachedUserData(user.id);
+    if (collabs.length === 0) return null;
+
+    const admin = getAdminClient();
+    const productIds = collabs.map((c: any) => c.product_id);
+
+    // Fetch buyer details for geography
+    const buyerUserIds = [...new Set(sales.map((s: any) => s.user_id))];
+    let buyerAccounts: any[] = [];
+    if (buyerUserIds.length > 0) {
+        const { data } = await admin
+            .from('user_accounts')
+            .select('user_id, city, state')
+            .in('user_id', buyerUserIds);
+        buyerAccounts = data || [];
+    }
+
+    // Geography breakdown
+    const geoMap: Record<string, number> = {};
+    sales.forEach((sale: any) => {
+        const buyer = buyerAccounts.find((b: any) => b.user_id === sale.user_id);
+        const location = buyer?.state || buyer?.city || 'Unknown';
+        geoMap[location] = (geoMap[location] || 0) + 1;
+    });
+    const geography = Object.entries(geoMap)
+        .map(([location, count]) => ({ location, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10);
+
+    // Hourly breakdown (peak hours)
+    const hourMap: Record<number, number> = {};
+    sales.forEach((sale: any) => {
+        const hour = new Date(sale.created_at).getHours();
+        hourMap[hour] = (hourMap[hour] || 0) + 1;
+    });
+    const hourlyData = Array.from({ length: 24 }, (_, i) => ({
+        hour: i,
+        label: `${i.toString().padStart(2, '0')}:00`,
+        count: hourMap[i] || 0
+    }));
+
+    // Daily breakdown (peak days)
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayMap: Record<number, number> = {};
+    sales.forEach((sale: any) => {
+        const day = new Date(sale.created_at).getDay();
+        dayMap[day] = (dayMap[day] || 0) + 1;
+    });
+    const dailyData = dayNames.map((name, i) => ({
+        day: name,
+        short: name.slice(0, 3),
+        count: dayMap[i] || 0
+    }));
+
+    // Per-pack monthly trends
+    const packTrends: Record<string, Record<string, number>> = {};
+    sales.forEach((sale: any) => {
+        const pack = packs.find((p: any) => p.id === sale.item_id);
+        if (!pack) return;
+        const month = new Date(sale.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        if (!packTrends[pack.name]) packTrends[pack.name] = {};
+        packTrends[pack.name][month] = (packTrends[pack.name][month] || 0) + 1;
+    });
+
+    return {
+        totalSales: sales.length,
+        geography,
+        hourlyData,
+        dailyData,
+        packTrends,
+        packs: packs.map((p: any) => ({ id: p.id, name: p.name, cover_url: p.cover_url }))
+    };
+}
+
+// ==================== SUPPORT TICKETS ====================
+export async function getSupportTickets() {
+    const { data: { user } } = await getUser();
+    if (!user) return [];
+
+    const admin = getAdminClient();
+    const { data, error } = await admin
+        .from('support_tickets')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('[GET_SUPPORT_TICKETS_ERROR]', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function submitSupportTicket(formData: { subject: string; message: string; category: string }) {
+    const { data: { user } } = await getUser();
+    if (!user) return { success: false, error: 'Unauthorized' };
+
+    const admin = getAdminClient();
+    const { error } = await admin
+        .from('support_tickets')
+        .insert({
+            user_id: user.id,
+            subject: formData.subject,
+            message: formData.message,
+            category: formData.category,
+        });
+
+    if (error) {
+        console.error('[SUBMIT_TICKET_ERROR]', error);
+        return { success: false, error: 'Failed to submit ticket.' };
+    }
+    return { success: true };
+}
+
+// ==================== AGREEMENTS ====================
+export async function getAgreements() {
+    const { data: { user } } = await getUser();
+    if (!user) return [];
+
+    const admin = getAdminClient();
+    const { data, error } = await admin
+        .from('artist_agreements')
+        .select('*, artist_collaborations(product_id, share_percent, role)')
+        .eq('artist_id', user.id)
+        .order('effective_date', { ascending: false });
+
+    if (error) {
+        console.error('[GET_AGREEMENTS_ERROR]', error);
+        return [];
+    }
+
+    // Enrich with pack names
+    if (data && data.length > 0) {
+        const collabProductIds = data
+            .filter((a: any) => a.artist_collaborations?.product_id)
+            .map((a: any) => a.artist_collaborations.product_id);
+
+        if (collabProductIds.length > 0) {
+            const { data: packs } = await admin
+                .from('sample_packs')
+                .select('id, name')
+                .in('id', collabProductIds);
+
+            return data.map((agreement: any) => ({
+                ...agreement,
+                pack_name: packs?.find((p: any) => p.id === agreement.artist_collaborations?.product_id)?.name || null
+            }));
+        }
+    }
+
+    return data || [];
 }

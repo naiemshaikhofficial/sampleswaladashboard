@@ -4,7 +4,13 @@ import {
   Package, 
   Wallet,
   ArrowUpRight,
-  ShoppingCart
+  ShoppingCart,
+  Award,
+  Zap,
+  Flame,
+  Crown,
+  Star,
+  Trophy
 } from 'lucide-react';
 import { getArtistStats } from '@/lib/dashboard-actions';
 import Link from 'next/link';
@@ -195,6 +201,81 @@ export default async function DashboardPage({
                 </div>
             )}
 
+            {/* Achievements Section */}
+            <div className="comic-panel p-6 neon-border bg-studio-charcoal">
+                <h4 className="text-sm font-black uppercase italic mb-4 flex items-center gap-2 text-studio-neon">
+                    <Award size={16} /> Artist Milestones
+                </h4>
+                <div className="grid grid-cols-3 gap-2">
+                    {[
+                        { 
+                            name: 'First Sale', 
+                            desc: 'Sell 1 unit',
+                            unlocked: (statsData?.totalSales || 0) >= 1, 
+                            icon: Zap, 
+                            color: 'bg-studio-blue text-black', 
+                            lockedColor: 'bg-white/5 text-white/20 border-white/10' 
+                        },
+                        { 
+                            name: 'Hit Maker', 
+                            desc: 'Sell 10 units',
+                            unlocked: (statsData?.totalSales || 0) >= 10, 
+                            icon: Flame, 
+                            color: 'bg-studio-pink text-black', 
+                            lockedColor: 'bg-white/5 text-white/20 border-white/10' 
+                        },
+                        { 
+                            name: 'Chart Topper', 
+                            desc: 'Sell 50 units',
+                            unlocked: (statsData?.totalSales || 0) >= 50, 
+                            icon: Crown, 
+                            color: 'bg-studio-yellow text-black', 
+                            lockedColor: 'bg-white/5 text-white/20 border-white/10' 
+                        },
+                        { 
+                            name: 'Bronze Club', 
+                            desc: 'Earn ₹10K',
+                            unlocked: (statsData?.totalRevenue || 0) >= 10000, 
+                            icon: Star, 
+                            color: 'bg-amber-600 text-black', 
+                            lockedColor: 'bg-white/5 text-white/20 border-white/10' 
+                        },
+                        { 
+                            name: 'Silver Club', 
+                            desc: 'Earn ₹50K',
+                            unlocked: (statsData?.totalRevenue || 0) >= 50000, 
+                            icon: Star, 
+                            color: 'bg-slate-300 text-black', 
+                            lockedColor: 'bg-white/5 text-white/20 border-white/10' 
+                        },
+                        { 
+                            name: 'Gold Club', 
+                            desc: 'Earn ₹1L',
+                            unlocked: (statsData?.totalRevenue || 0) >= 100000, 
+                            icon: Trophy, 
+                            color: 'bg-yellow-400 text-black', 
+                            lockedColor: 'bg-white/5 text-white/20 border-white/10' 
+                        },
+                    ].map((badge) => {
+                        const Icon = badge.icon;
+                        return (
+                            <div 
+                                key={badge.name} 
+                                className={`flex flex-col items-center justify-center p-2 border-2 text-center group relative transition-all ${
+                                    badge.unlocked 
+                                        ? 'border-black shadow-[2px_2px_0px_rgba(0,0,0,1)] hover:-translate-y-0.5 ' + badge.color 
+                                        : 'border-transparent ' + badge.lockedColor
+                                }`}
+                                title={`${badge.name}: ${badge.desc} (${badge.unlocked ? 'Unlocked' : 'Locked'})`}
+                            >
+                                <Icon size={20} className={badge.unlocked ? 'animate-pulse' : ''} />
+                                <span className="text-[7px] font-black uppercase tracking-tight mt-1 truncate w-full">{badge.name}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
             <div className="comic-panel p-6 pink-border">
                 <h4 className="text-sm font-black uppercase italic mb-6">Agreement Status</h4>
                 <div className="p-4 bg-black/40 border border-white/10 italic text-xs text-white/60">
@@ -204,12 +285,12 @@ export default async function DashboardPage({
             
             {/* Quick Actions */}
             <div className="flex flex-col gap-2">
-                <button className="studio-button w-full text-[9px] !py-3">
-                    Upload New Pack
-                </button>
-                <button className="studio-button w-full text-[9px] !bg-transparent !text-white/60 hover:!text-white border-2 border-white/10 hover:border-white !py-3">
-                    Download Statement
-                </button>
+                <Link href="/my-packs" className="studio-button w-full text-[9px] !py-3">
+                    View Collaborations
+                </Link>
+                <Link href="/revenue" className="studio-button w-full text-[9px] !bg-transparent !text-white/60 hover:!text-white border-2 border-white/10 hover:border-white !py-3">
+                    View Revenue Splits
+                </Link>
             </div>
         </div>
       </div>
