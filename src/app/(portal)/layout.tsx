@@ -10,7 +10,7 @@ import {
   TrendingUp,
   CreditCard
 } from 'lucide-react';
-import { headers } from "next/headers";
+
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/supabase/server";
 import { getAdminClient } from "@/lib/supabase/admin";

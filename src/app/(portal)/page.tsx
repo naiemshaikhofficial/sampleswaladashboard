@@ -12,9 +12,9 @@ import Link from 'next/link';
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { startDate?: string; endDate?: string };
+  searchParams: Promise<{ startDate?: string; endDate?: string }>;
 }) {
-  const { startDate, endDate } = searchParams;
+  const { startDate, endDate } = await searchParams;
   const statsData = await getArtistStats(startDate, endDate);
   
   // Calculate average share across all active collaborations
