@@ -5,20 +5,20 @@ import { getUser } from '@/lib/supabase/server';
 export async function uploadKycToDrive(formData: FormData) {
     const { data: { user } } = await getUser();
     if (!user) {
-        throw new Error("Unauthorized");
+        return { success: false, error: "Unauthorized. Please log in again." };
     }
 
     const file = formData.get('file') as File;
     const docType = formData.get('docType') as string;
 
     if (!file || !docType) {
-        throw new Error("File and document type are required");
+        return { success: false, error: "File and document type are required." };
     }
 
     const WEBHOOK_URL = process.env.GOOGLE_WEBHOOK_URL;
     if (!WEBHOOK_URL) {
         console.error("Missing Google Webhook URL");
-        throw new Error("Server configuration error. Contact admin.");
+        return { success: false, error: "Server configuration error. Contact admin." };
     }
 
     try {
@@ -47,11 +47,11 @@ export async function uploadKycToDrive(formData: FormData) {
             result = JSON.parse(rawText);
         } catch (parseError) {
             console.error("Non-JSON Response from Webhook:", rawText.substring(0, 200));
-            throw new Error("Webhook returned an invalid response (HTML). Please check if your Google Apps Script is set to 'Anyone' access. Raw: " + rawText.substring(0, 100));
+            return { success: false, error: "Webhook returned an invalid response. Please contact support." };
         }
 
         if (!result.success) {
-            throw new Error(result.error || "Unknown webhook error");
+            return { success: false, error: result.error || "Unknown webhook error." };
         }
 
         // Save fileId to Supabase
@@ -67,6 +67,6 @@ export async function uploadKycToDrive(formData: FormData) {
 
     } catch (error: any) {
         console.error("Webhook Upload Error:", error);
-        throw new Error("Google Drive Error: " + error.message);
+        return { success: false, error: "Google Drive Error: " + error.message };
     }
 }

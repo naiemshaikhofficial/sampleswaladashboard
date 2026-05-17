@@ -164,7 +164,7 @@ export async function getArtistStats(startDate?: string, endDate?: string) {
 
 export async function updatePayoutSettings(formData: any) {
     const { data: { user } } = await getUser();
-    if (!user) throw new Error("Unauthorized");
+    if (!user) return { success: false, error: "Unauthorized. Please log in again." };
 
     const admin = getAdminClient();
 
@@ -178,7 +178,7 @@ export async function updatePayoutSettings(formData: any) {
 
     if (error) {
         console.error('[UPDATE_PAYOUT_SETTINGS_ERROR]', error);
-        throw error;
+        return { success: false, error: "Failed to save payout details. Please try again." };
     }
 
     return { success: true };

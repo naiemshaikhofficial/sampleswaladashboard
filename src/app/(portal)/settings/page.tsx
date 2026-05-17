@@ -91,31 +91,33 @@ export default function PayoutSettings() {
                                 const form = new FormData(e.currentTarget);
                                 const payload = Object.fromEntries(form.entries());
 
-                                try {
-                                    const legalName = (payload.legal_name as string).trim().toLowerCase();
-                                    const accountName = (payload.account_holder_name as string).trim().toLowerCase();
+                                const legalName = (payload.legal_name as string).trim().toLowerCase();
+                                const accountName = (payload.account_holder_name as string).trim().toLowerCase();
 
-                                    if (legalName !== accountName) {
-                                        throw new Error("Legal Name and Account Holder Name must be the same for KYC approval.");
-                                    }
+                                if (legalName !== accountName) {
+                                    setDetailsMessage({ type: 'error', text: "Failed to save: Legal Name and Account Holder Name must be the same for KYC approval." });
+                                    return;
+                                }
 
-                                    if (payload.account_number !== payload.confirm_account_number) {
-                                        throw new Error("Account numbers do not match!");
-                                    }
+                                if (payload.account_number !== payload.confirm_account_number) {
+                                    setDetailsMessage({ type: 'error', text: "Failed to save: Account numbers do not match!" });
+                                    return;
+                                }
 
-                                    setIsSavingDetails(true);
-                                    setDetailsMessage(null);
-                                    await updatePayoutSettings(payload);
+                                setIsSavingDetails(true);
+                                setDetailsMessage(null);
+                                const result = await updatePayoutSettings(payload);
+
+                                if (!result?.success) {
+                                    setDetailsMessage({ type: 'error', text: "Failed to save: " + (result?.error || "Unknown error") });
+                                } else {
                                     // Update local cache so next visit skips DB
                                     const updated = { ...initialData, ...payload };
                                     setInitialData(updated);
                                     localStorage.setItem('sw_payout_settings', JSON.stringify(updated));
                                     setDetailsMessage({ type: 'success', text: "Payout details successfully saved!" });
-                                } catch (err: any) {
-                                    setDetailsMessage({ type: 'error', text: "Failed to save: " + err.message });
-                                } finally {
-                                    setIsSavingDetails(false);
                                 }
+                                setIsSavingDetails(false);
                             }}
                             className="space-y-6"
                         >
@@ -307,10 +309,13 @@ export default function PayoutSettings() {
                                 onSubmit={async (e) => {
                                     e.preventDefault();
                                     const formData = new FormData(e.currentTarget);
-                                    try {
-                                        setIsSaving(true);
-                                        setUploadMessage(null);
-                                        const result = await uploadKycToDrive(formData);
+                                    setIsSaving(true);
+                                    setUploadMessage(null);
+                                    const result = await uploadKycToDrive(formData);
+
+                                    if (!result?.success) {
+                                        setUploadMessage({ type: 'error', text: "Upload failed: " + (result?.error || "Unknown error") });
+                                    } else {
                                         // Update local cache with new document ID
                                         if (result?.fileId) {
                                             const updated = { ...initialData, kyc_document_id: result.fileId };
@@ -320,11 +325,8 @@ export default function PayoutSettings() {
                                             setPreviewUrl(null);
                                         }
                                         setUploadMessage({ type: 'success', text: "Document successfully uploaded!" });
-                                    } catch (err: any) {
-                                        setUploadMessage({ type: 'error', text: "Upload failed: " + err.message });
-                                    } finally {
-                                        setIsSaving(false);
                                     }
+                                    setIsSaving(false);
                                 }}
                                 className="space-y-6"
                             >
