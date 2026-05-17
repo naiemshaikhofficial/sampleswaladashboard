@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import { Music, Eye, Download, TrendingUp, Info } from 'lucide-react';
 import { getArtistStats } from '@/lib/dashboard-actions';
 import { getAdminClient } from '@/lib/supabase/admin';
@@ -72,12 +73,15 @@ export default async function MyPacksPage() {
 
                                 {/* Actions */}
                                 <div className="flex flex-col gap-2 w-full md:w-auto">
-                                    <button className="studio-button text-[9px] w-full">
+                                    <Link href="/revenue" className="studio-button text-[9px] w-full text-center">
                                         <TrendingUp size={14} /> Analytics
-                                    </button>
-                                    <button className="studio-button text-[9px] w-full !bg-black !text-white hover:!bg-white hover:!text-black">
+                                    </Link>
+                                    <Link 
+                                        href={`mailto:legal@sampleswala.com?subject=Agreement Request - ${pack.name}&body=Hello,%0A%0A I would like to request a copy of my collaboration agreement for the pack: ${pack.name}.`} 
+                                        className="studio-button text-[9px] w-full !bg-black !text-white hover:!bg-white hover:!text-black text-center"
+                                    >
                                         <Info size={14} /> Agreement
-                                    </button>
+                                    </Link>
                                 </div>
                             </div>
                         );

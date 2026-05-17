@@ -33,30 +33,10 @@ export default async function DashboardLayout({
       admin.from('admins').select('user_id').eq('user_id', user.id).limit(1)
     ]);
 
-    // TEMPORARY FOR DEBUGGING: Allow all logged in users to see the dashboard
-    const isAuthorized = true; // (artistRes.data && artistRes.data.length > 0) || (adminRes.data && adminRes.data.length > 0);
+    const isAuthorized = (artistRes.data && artistRes.data.length > 0) || (adminRes.data && adminRes.data.length > 0);
 
     if (!isAuthorized) {
-        return (
-          <div className="min-h-screen bg-black flex flex-col items-center justify-center p-6 font-mono">
-            <div className="w-full max-w-md bg-studio-charcoal border-4 border-black p-8 shadow-[12px_12px_0px_rgba(0,0,0,1)] text-center">
-              <h2 className="text-2xl font-black italic uppercase text-studio-pink mb-4">ACCESS DENIED</h2>
-              <p className="text-xs text-white/60 font-bold uppercase leading-relaxed mb-8">
-                Your account ({user.email}) is not registered in our Artist Portal.<br/><br/>
-                Please contact our support to get your artist access enabled.
-              </p>
-              <div className="space-y-4">
-                <LogoutButton />
-                <Link 
-                  href="https://sampleswala.com" 
-                  className="block text-[10px] text-studio-neon font-black uppercase hover:underline tracking-widest pt-4"
-                >
-                  Back to Sampleswala.com
-                </Link>
-              </div>
-            </div>
-          </div>
-        );
+        redirect('https://sampleswala.com');
     }
   } else {
     redirect('/auth/login');
