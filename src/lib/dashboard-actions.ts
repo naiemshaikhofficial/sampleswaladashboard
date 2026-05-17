@@ -174,7 +174,7 @@ export async function updatePayoutSettings(formData: any) {
             user_id: user.id,
             ...formData,
             updated_at: new Date().toISOString()
-        });
+        }, { onConflict: 'user_id' });
 
     if (error) {
         console.error('[UPDATE_PAYOUT_SETTINGS_ERROR]', error);
