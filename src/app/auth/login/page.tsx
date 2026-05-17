@@ -1,6 +1,7 @@
 import { getUser } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AuthForm } from '@/components/auth/AuthForm';
 import React from 'react';
 
@@ -22,11 +23,17 @@ export default async function ArtistLoginPage() {
             <div className="w-full max-w-md relative z-10">
                 <div className="mb-12 text-center">
                     <Link href="/" className="inline-block mb-6">
-                        <h1 className="text-4xl font-black italic uppercase leading-none tracking-tighter">
-                            SAMPLES<br />
-                            <span className="text-studio-neon">WALA</span>
-                            <span className="block text-[10px] mt-2 text-white/40 tracking-[0.4em] font-black">ARTIST PORTAL LOGIN</span>
-                        </h1>
+                        <div className="flex flex-col items-center gap-2">
+                            <Image 
+                                src="/Logo.png" 
+                                alt="SamplesWala Logo" 
+                                width={200} 
+                                height={50} 
+                                className="h-auto w-auto max-w-[200px] brightness-0 invert hover:scale-105 transition-transform"
+                                priority
+                            />
+                            <span className="block text-[10px] mt-2 text-white/40 tracking-[0.4em] font-black uppercase">ARTIST PORTAL LOGIN</span>
+                        </div>
                     </Link>
                     <div className="inline-block px-4 py-1 bg-studio-charcoal border-2 border-white/10 text-[10px] font-black uppercase tracking-widest text-white/60">
                         Collaborators Only
