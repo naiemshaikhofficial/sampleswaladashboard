@@ -32,7 +32,8 @@ export default function RootDashboardLayout({
   return (
     <html lang="en" className="dark">
       <head>
-        <link rel="icon" href="/Favicon.ico" sizes="any" />
+        <link rel="icon" href="/Favicon.ico?v=3" sizes="any" />
+        <link rel="icon" href="/icon.png?v=3" type="image/png" sizes="192x192" />
       </head>
       <body
         className={`${luckiestGuy.variable} ${kalam.variable} ${jetbrainsMono.variable} antialiased bg-black text-white selection:bg-studio-neon selection:text-black`}
